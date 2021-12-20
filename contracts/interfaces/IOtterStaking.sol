@@ -2,6 +2,7 @@
 pragma solidity 0.7.5;
 
 interface IOtterStaking {
-    function stake( uint _amount, address _recipient ) external returns ( bool );
-    function claim ( address _recipient ) external;
+    function stake(uint256 _amount, address _recipient) external returns (bool);
+
+    function claim(address _recipient) external;
 }

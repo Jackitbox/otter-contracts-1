@@ -2,10 +2,22 @@
 pragma solidity 0.7.5;
 
 interface IOtterTreasury {
-    function excessReserves() external view returns ( uint );
-    function deposit( uint _amount, address _token, uint _profit ) external returns ( uint sent_ );
-    function valueOfToken( address _token, uint _amount ) external view returns ( uint value_ );
-    function mintRewards( address _recipient, uint _amount ) external;
-    function manage( address _token, uint _amount ) external;
-    function withdraw( uint _amount, address _token ) external;
+    function excessReserves() external view returns (uint256);
+
+    function deposit(
+        uint256 _amount,
+        address _token,
+        uint256 _profit
+    ) external returns (uint256 sent_);
+
+    function valueOfToken(address _token, uint256 _amount)
+        external
+        view
+        returns (uint256 value_);
+
+    function mintRewards(address _recipient, uint256 _amount) external;
+
+    function manage(address _token, uint256 _amount) external;
+
+    function withdraw(uint256 _amount, address _token) external;
 }

@@ -180,7 +180,9 @@ contract ClamTokenMigrator is Ownable {
 
         // Mint new CLAM to migrator for migration
         mai.safeApprove(address(newTreasury), excessReserves);
-        uint256 newCLAMMinted = newCLAMTotalSupply.sub(newCLAMAmountInLP).sub(1);
+        uint256 newCLAMMinted = newCLAMTotalSupply.sub(newCLAMAmountInLP).sub(
+            1
+        );
         uint256 profit = valueOfMai.sub(newCLAMMinted);
         newTreasury.deposit(excessReserves, address(mai), profit);
     }

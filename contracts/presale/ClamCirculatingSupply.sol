@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later\
 pragma solidity 0.7.5;
 
-import "../interfaces/IERC20.sol";
+import '../interfaces/IERC20.sol';
 
-import "../libraries/SafeMath.sol";
+import '../libraries/SafeMath.sol';
 
 contract ClamCirculatingSupply {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     bool public isInitialized;
 
@@ -14,13 +14,13 @@ contract ClamCirculatingSupply {
     address public owner;
     address[] public nonCirculatingCLAMAddresses;
 
-    constructor( address _owner ) {
+    constructor(address _owner) {
         owner = _owner;
     }
 
-    function initialize( address _clam ) external returns ( bool ) {
-        require( msg.sender == owner, "caller is not owner" );
-        require( isInitialized == false );
+    function initialize(address _clam) external returns (bool) {
+        require(msg.sender == owner, 'caller is not owner');
+        require(isInitialized == false);
 
         CLAM = _clam;
 
@@ -29,33 +29,41 @@ contract ClamCirculatingSupply {
         return true;
     }
 
-    function CLAMCirculatingSupply() external view returns ( uint ) {
-        uint _totalSupply = IERC20( CLAM ).totalSupply();
+    function CLAMCirculatingSupply() external view returns (uint256) {
+        uint256 _totalSupply = IERC20(CLAM).totalSupply();
 
-        uint _circulatingSupply = _totalSupply.sub( getNonCirculatingCLAM() );
+        uint256 _circulatingSupply = _totalSupply.sub(getNonCirculatingCLAM());
 
         return _circulatingSupply;
     }
 
-    function getNonCirculatingCLAM() public view returns ( uint ) {
-        uint _nonCirculatingCLAM;
+    function getNonCirculatingCLAM() public view returns (uint256) {
+        uint256 _nonCirculatingCLAM;
 
-        for( uint i=0; i < nonCirculatingCLAMAddresses.length; i = i.add( 1 ) ) {
-            _nonCirculatingCLAM = _nonCirculatingCLAM.add( IERC20( CLAM ).balanceOf( nonCirculatingCLAMAddresses[i] ) );
+        for (
+            uint256 i = 0;
+            i < nonCirculatingCLAMAddresses.length;
+            i = i.add(1)
+        ) {
+            _nonCirculatingCLAM = _nonCirculatingCLAM.add(
+                IERC20(CLAM).balanceOf(nonCirculatingCLAMAddresses[i])
+            );
         }
 
         return _nonCirculatingCLAM;
     }
 
-    function setNonCirculatingCLAMAddresses( address[] calldata _nonCirculatingAddresses ) external returns ( bool ) {
-        require( msg.sender == owner, "Sender is not owner" );
+    function setNonCirculatingCLAMAddresses(
+        address[] calldata _nonCirculatingAddresses
+    ) external returns (bool) {
+        require(msg.sender == owner, 'Sender is not owner');
         nonCirculatingCLAMAddresses = _nonCirculatingAddresses;
 
         return true;
     }
 
-    function transferOwnership( address _owner ) external returns ( bool ) {
-        require( msg.sender == owner, "Sender is not owner" );
+    function transferOwnership(address _owner) external returns (bool) {
+        require(msg.sender == owner, 'Sender is not owner');
 
         owner = _owner;
 

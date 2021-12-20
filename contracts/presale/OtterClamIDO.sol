@@ -9,7 +9,7 @@ import '../types/ERC20.sol';
 
 import '../libraries/SafeMath.sol';
 import '../libraries/Math.sol';
-import "../libraries/SafeERC20.sol";
+import '../libraries/SafeERC20.sol';
 
 interface ITreasury {
     function deposit(
