@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
-import "./interfaces/IsCLAM.sol";
-import "./libraries/SafeMath.sol";
-import "./libraries/SafeERC20.sol";
-import "./libraries/Address.sol";
-import "./types/ERC20.sol";
+import './interfaces/IsCLAM.sol';
+import './libraries/SafeMath.sol';
+import './libraries/SafeERC20.sol';
+import './libraries/Address.sol';
+import './types/ERC20.sol';
 
 contract OtterPearlERC20 is ERC20 {
     using SafeERC20 for ERC20;
     using Address for address;
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     address public immutable sCLAM;
 
-    constructor( address _sCLAM ) ERC20( 'Wrapped sCLAM', 'PEARL', 18 ) {
-        require( _sCLAM != address(0) );
+    constructor(address _sCLAM) ERC20('Wrapped sCLAM', 'PEARL', 18) {
+        require(_sCLAM != address(0));
         sCLAM = _sCLAM;
     }
 
@@ -24,11 +24,11 @@ contract OtterPearlERC20 is ERC20 {
         @param _amount uint
         @return uint
      */
-    function wrap( uint _amount ) external returns ( uint ) {
-        IERC20( sCLAM ).transferFrom( msg.sender, address(this), _amount );
+    function wrap(uint256 _amount) external returns (uint256) {
+        IERC20(sCLAM).transferFrom(msg.sender, address(this), _amount);
 
-        uint value = sCLAMToPEARL( _amount );
-        _mint( msg.sender, value );
+        uint256 value = sCLAMToPEARL(_amount);
+        _mint(msg.sender, value);
         return value;
     }
 
@@ -37,11 +37,11 @@ contract OtterPearlERC20 is ERC20 {
         @param _amount uint
         @return uint
      */
-    function unwrap( uint _amount ) external returns ( uint ) {
-        _burn( msg.sender, _amount );
+    function unwrap(uint256 _amount) external returns (uint256) {
+        _burn(msg.sender, _amount);
 
-        uint value = pearlTosCLAM( _amount );
-        IERC20( sCLAM ).transfer( msg.sender, value );
+        uint256 value = pearlTosCLAM(_amount);
+        IERC20(sCLAM).transfer(msg.sender, value);
         return value;
     }
 
@@ -50,8 +50,8 @@ contract OtterPearlERC20 is ERC20 {
         @param _amount uint
         @return uint
      */
-    function pearlTosCLAM( uint _amount ) public view returns ( uint ) {
-        return _amount.mul( IsCLAM( sCLAM ).index() ).div( 10 ** decimals() );
+    function pearlTosCLAM(uint256 _amount) public view returns (uint256) {
+        return _amount.mul(IsCLAM(sCLAM).index()).div(10**decimals());
     }
 
     /**
@@ -59,9 +59,7 @@ contract OtterPearlERC20 is ERC20 {
         @param _amount uint
         @return uint
      */
-    function sCLAMToPEARL( uint _amount ) public view returns ( uint ) {
-        return _amount.mul( 10 ** decimals() ).div( IsCLAM( sCLAM ).index() );
+    function sCLAMToPEARL(uint256 _amount) public view returns (uint256) {
+        return _amount.mul(10**decimals()).div(IsCLAM(sCLAM).index());
     }
-
 }
-
