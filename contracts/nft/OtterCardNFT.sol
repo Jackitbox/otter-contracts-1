@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity 0.8.4;
+pragma solidity 0.7.5;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-import '@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol';
 
-contract OtterCardNFT is ERC721, ERC721URIStorage, Ownable {
+contract OtterCardNFT is ERC721, Ownable {
     string public cardURI;
     uint256 public tokenIdCount;
 
@@ -20,17 +19,14 @@ contract OtterCardNFT is ERC721, ERC721URIStorage, Ownable {
         cardURI = cardURI_;
     }
 
-    function _burn(uint256 tokenId)
-        internal
-        override(ERC721, ERC721URIStorage)
-    {
+    function _burn(uint256 tokenId) internal override(ERC721) {
         super._burn(tokenId);
     }
 
     function tokenURI(uint256 tokenId)
         public
         view
-        override(ERC721, ERC721URIStorage)
+        override(ERC721)
         returns (string memory)
     {
         return super.tokenURI(tokenId);

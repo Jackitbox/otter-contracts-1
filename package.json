@@ -15,7 +15,7 @@
     "bonds:adjust": "npx hardhat run ./scripts/adjustBonds.js --network polygon-mainnet"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.3.2",
+    "@openzeppelin/contracts": "^3.4.0",
     "dotenv": "^10.0.0"
   },
   "devDependencies": {
