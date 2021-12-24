@@ -71,9 +71,13 @@ describe('OtterClam2021Q4ERC721', function () {
       await nft.connect(otter).claim()
       expect(await nft.claimed(otter.address)).to.eq(1)
       expect(await nft.currentTokenIndex()).to.eq(1)
-      await expect(nft.tokenURI(0)).to.revertedWith('ERC721Metadata: URI query for nonexistent token')
+      await expect(nft.tokenURI(0)).to.revertedWith(
+        'ERC721Metadata: URI query for nonexistent token'
+      )
       expect(await nft.tokenURI(1)).to.eq('ipfs://metadata')
-      await expect(nft.tokenURI(2)).to.revertedWith('ERC721Metadata: URI query for nonexistent token')
+      await expect(nft.tokenURI(2)).to.revertedWith(
+        'ERC721Metadata: URI query for nonexistent token'
+      )
     })
 
     it('auto increment id', async function () {
@@ -110,7 +114,9 @@ describe('OtterClam2021Q4ERC721', function () {
 
     it('can not set after finalized', async function () {
       await nft.finalize()
-      await expect(nft.setURI('ipfs://changed')).to.be.revertedWith('can not set URI after finalized')
+      await expect(nft.setURI('ipfs://changed')).to.be.revertedWith(
+        'can not set URI after finalized'
+      )
     })
 
     it('can not finalize twice', async function () {
