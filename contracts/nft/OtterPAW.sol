@@ -1,35 +1,36 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity 0.7.5;
+pragma solidity 0.8.4;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 
-contract OtterCardNFT is ERC721, Ownable {
-    string public cardURI;
-    uint256 public tokenIdCount;
+contract OtterPAW is ERC721, Ownable {
+    string private _pawURI;
+    bool private _finalized;
 
+    uint256 public currentTokenIndex;
     mapping(address => bool) public whitelist;
     mapping(address => uint256) public claimed;
 
     constructor(
         string memory name_,
         string memory symbol_,
-        string memory cardURI_
+        string memory pawURI_
     ) ERC721(name_, symbol_) {
-        cardURI = cardURI_;
+        _pawURI = pawURI_;
     }
 
-    function _burn(uint256 tokenId) internal override(ERC721) {
-        super._burn(tokenId);
-    }
-
-    function tokenURI(uint256 tokenId)
+    function tokenURI(uint256 tokenId_)
         public
         view
-        override(ERC721)
+        override
         returns (string memory)
     {
-        return super.tokenURI(tokenId);
+        require(
+            _exists(tokenId_),
+            'ERC721Metadata: URI query for nonexistent token'
+        );
+        return _pawURI;
     }
 
     function setWhitelist(address[] memory otters_) external onlyOwner {
@@ -46,15 +47,27 @@ contract OtterCardNFT is ERC721, Ownable {
         }
     }
 
+    function setURI(string memory uri_) external onlyOwner {
+        require(!_finalized, 'can not set URI after finalized');
+        _pawURI = uri_;
+    }
+
+    function finalize() external onlyOwner {
+        require(!_finalized, 'already finalized');
+        _finalized = true;
+    }
+
     function claim() external {
         require(msg.sender != address(0), 'zero address');
         require(whitelist[msg.sender], 'not in whitelist');
         require(claimed[msg.sender] == 0, 'already claimed');
+        require(
+            block.timestamp > 1640350800,
+            'party start at 2021-12-24T013:00:00Z'
+        );
 
-        tokenIdCount += 1;
-        claimed[msg.sender] = tokenIdCount;
-
-        _mint(msg.sender, tokenIdCount);
-        _setTokenURI(tokenIdCount, cardURI);
+        currentTokenIndex += 1;
+        claimed[msg.sender] = currentTokenIndex;
+        _mint(msg.sender, currentTokenIndex);
     }
 }
