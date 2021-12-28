@@ -22,30 +22,27 @@ describe('Pearl Vault', function () {
   // Initial staking index
   const initialIndex = '1000000000'
 
-  let deployer, vault, pool, dai, user1, user2
+  let deployer, vault, pearl, user1, user2
 
   beforeEach(async function () {
     ;[deployer, user1, user2] = await ethers.getSigners()
 
     const DAI = await ethers.getContractFactory('DAI')
-    dai = await DAI.deploy(0)
-
-    const Pool = await ethers.getContractFactory('PearlVaultRewardPool')
-    pool = await Pool.deploy(dai.address)
+    pearl = await DAI.deploy(0)
 
     const Vault = await ethers.getContractFactory('PearlVault')
-    vault = await Vault.deploy(deployer.address, dai.address, pool.address)
+    vault = await Vault.deploy(deployer.address, pearl.address, pool.address)
 
     await pool.setVault(vault.address)
 
     // mint 1,000,000 DAI for testing
-    await dai.mint(deployer.address, parseEther(String(100 * 10000)))
-    await dai.transfer(user1.address, parseEther(String(1000)))
-    await dai.transfer(user2.address, parseEther(String(100)))
+    await pearl.mint(deployer.address, parseEther(String(100 * 10000)))
+    await pearl.transfer(user1.address, parseEther(String(1000)))
+    await pearl.transfer(user2.address, parseEther(String(100)))
 
     // approve
-    await dai.connect(user1).approve(vault.address, largeApproval)
-    await dai.connect(user2).approve(vault.address, largeApproval)
+    await pearl.connect(user1).approve(vault.address, largeApproval)
+    await pearl.connect(user2).approve(vault.address, largeApproval)
   })
 
   describe('terms', function () {
@@ -54,7 +51,7 @@ describe('Pearl Vault', function () {
     beforeEach(async function () {
       const Note = await ethers.getContractFactory('PearlNote')
       note = await Note.deploy(
-        dai.address,
+        pearl.address,
         'Note',
         'NOTE',
         'https://example.com/diamond'
@@ -92,7 +89,7 @@ describe('Pearl Vault', function () {
     beforeEach(async function () {
       const Note = await ethers.getContractFactory('PearlNote')
       note = await Note.deploy(
-        dai.address,
+        pearl.address,
         'Note',
         'NOTE',
         'https://example.com/diamond'
@@ -110,13 +107,13 @@ describe('Pearl Vault', function () {
 
       await expect(() =>
         vault.connect(user1).lock(term, 100)
-      ).to.changeTokenBalance(dai, user1, -100)
+      ).to.changeTokenBalance(pearl, user1, -100)
 
       expect(await note.balanceOf(user1.address)).to.eq(1)
 
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
       const reward = 20
-      await dai.transfer(pool.address, reward)
+      await pearl.transfer(pool.address, reward)
 
       await timeAndMine.setTimeNextBlock(now + 100)
       await vault.notifyRewardAmount(reward)
@@ -126,12 +123,12 @@ describe('Pearl Vault', function () {
       await timeAndMine.setTimeNextBlock(now + 105)
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
-      ).to.changeTokenBalance(dai, user1, 10)
+      ).to.changeTokenBalance(pearl, user1, 10)
 
       await timeAndMine.setTimeNextBlock(now + 150)
       await expect(() =>
         vault.connect(user1).exit(term, noteId)
-      ).to.changeTokenBalance(dai, user1, 110)
+      ).to.changeTokenBalance(pearl, user1, 110)
 
       now = now + 200
     })
@@ -143,12 +140,12 @@ describe('Pearl Vault', function () {
 
       await expect(() =>
         vault.connect(user1).lock(term, 100)
-      ).to.changeTokenBalance(dai, user1, -100)
+      ).to.changeTokenBalance(pearl, user1, -100)
 
       expect(await note.balanceOf(user1.address)).to.eq(1)
 
       const reward = 20
-      await dai.transfer(pool.address, reward)
+      await pearl.transfer(pool.address, reward)
 
       await timeAndMine.setTimeNextBlock(now + 10)
       await vault.notifyRewardAmount(reward)
@@ -160,7 +157,7 @@ describe('Pearl Vault', function () {
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
-      ).to.changeTokenBalance(dai, user1, 10)
+      ).to.changeTokenBalance(pearl, user1, 10)
 
       await expect(vault.connect(user1).exit(term, noteId)).to.be.revertedWith(
         'PearlNote: the note is not expired'
@@ -178,7 +175,7 @@ describe('Pearl Vault', function () {
       await vault.connect(user1).lock(term, 100)
 
       const reward = 200
-      await dai.transfer(pool.address, reward)
+      await pearl.transfer(pool.address, reward)
       await timeAndMine.setTimeNextBlock(now + 100)
       await vault.notifyRewardAmount(reward)
 
@@ -188,7 +185,7 @@ describe('Pearl Vault', function () {
       await timeAndMine.setTimeNextBlock(now + 105)
       await expect(() =>
         vault.connect(user1).claimReward(term, user1Note)
-      ).to.changeTokenBalance(dai, user1, 10)
+      ).to.changeTokenBalance(pearl, user1, 10)
 
       // user 2 lock
       await timeAndMine.setTimeNextBlock(now + 110)
@@ -199,11 +196,11 @@ describe('Pearl Vault', function () {
 
       await expect(() =>
         vault.connect(user1).exit(term, user1Note)
-      ).to.changeTokenBalance(dai, user1, 155)
+      ).to.changeTokenBalance(pearl, user1, 155)
 
       await expect(() =>
         vault.connect(user2).exit(term, user2Note)
-      ).to.changeTokenBalance(dai, user2, 435)
+      ).to.changeTokenBalance(pearl, user2, 435)
 
       now += 300
     })
@@ -224,7 +221,7 @@ describe('Pearl Vault', function () {
       const Note = await ethers.getContractFactory('PearlNote')
 
       note1 = await Note.deploy(
-        dai.address,
+        pearl.address,
         'Note1',
         'NOTE1',
         'https://example.com/safe'
@@ -238,7 +235,7 @@ describe('Pearl Vault', function () {
       )
 
       note2 = await Note.deploy(
-        dai.address,
+        pearl.address,
         'Note2',
         'NOTE2',
         'https://example.com/diamond'
@@ -269,7 +266,7 @@ describe('Pearl Vault', function () {
       expect(await vault.boostPointOf(1, user2Note)).to.eq(200)
 
       const reward = 300
-      await dai.transfer(pool.address, reward)
+      await pearl.transfer(pool.address, reward)
       await timeAndMine.setTimeNextBlock(now + 110)
       await vault.notifyRewardAmount(reward)
 
@@ -282,11 +279,11 @@ describe('Pearl Vault', function () {
 
       await expect(() =>
         vault.connect(user1).exit(0, user1Note)
-      ).to.changeTokenBalance(dai, user1, 200)
+      ).to.changeTokenBalance(pearl, user1, 200)
 
       await expect(() =>
         vault.connect(user2).exit(1, user2Note)
-      ).to.changeTokenBalance(dai, user2, 300)
+      ).to.changeTokenBalance(pearl, user2, 300)
 
       now += 600
     })
@@ -306,7 +303,7 @@ describe('Pearl Vault', function () {
       expect(await vault.boostPointOf(1, user2Note)).to.eq(200)
 
       const reward = 900
-      await dai.transfer(pool.address, reward)
+      await pearl.transfer(pool.address, reward)
       await timeAndMine.setTimeNextBlock(now + 110)
       await vault.notifyRewardAmount(reward)
 
@@ -314,11 +311,11 @@ describe('Pearl Vault', function () {
 
       await expect(() =>
         vault.connect(user1).exit(0, user1Note)
-      ).to.changeTokenBalance(dai, user1, 200)
+      ).to.changeTokenBalance(pearl, user1, 200)
 
       await expect(() =>
         vault.connect(user2).exit(1, user2Note)
-      ).to.changeTokenBalance(dai, user2, 300)
+      ).to.changeTokenBalance(pearl, user2, 300)
 
       now += 501
     })
