@@ -63,8 +63,8 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     Adjust public adjustment; // stores adjustment to BCV data
 
     mapping(address => Bond) public bondInfo; // stores bond information for depositors
-    mapping(address => Discount[]) public discountInfo;
-    mapping(address => uint256) public pawDiscountRate;
+    mapping(address => Discount[]) public discountInfo; // stores discount information for depositor
+    mapping(address => uint256) public pawDiscount; // 500 = 5%
 
     uint256 public totalDebt; // total value of outstanding bonds; used for pricing
     uint256 public lastDecay; // reference timestamp for debt decay
@@ -100,9 +100,9 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     }
 
     struct Discount {
-        address paw;
-        uint256 tokenID;
-        uint256 discount;
+        address paw; // paw nft address
+        uint256 tokenID; // paw nft tokenID
+        uint256 discount; // discount when buying
     }
 
     /* ======== INITIALIZATION ======== */
@@ -246,7 +246,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         onlyOwner
     {
         require(_paw != address(0), 'zero address');
-        pawDiscountRate[_paw] = _discount;
+        pawDiscount[_paw] = _discount;
     }
 
     /* ======== USER FUNCTIONS ======== */
@@ -295,7 +295,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
             IERC721(_paw).safeTransferFrom(msg.sender, address(this), _tokenID);
             discountInfo[_depositor].push(
                 Discount({
-                    discount: pawDiscountRate[_paw],
+                    discount: pawDiscount[_paw],
                     paw: _paw,
                     tokenID: _tokenID
                 })
@@ -439,6 +439,9 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
                 .div(1e16);
     }
 
+    /**
+     *  @notice check whether pay with paw or not
+     */
     function useDiscountWithPAW(address _paw, uint256 _tokenID)
         internal
         view
@@ -446,7 +449,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     {
         if (
             _paw != address(0) &&
-            pawDiscountRate[_paw] != 0 &&
+            pawDiscount[_paw] != 0 &&
             IERC721(_paw).ownerOf(_tokenID) == msg.sender
         ) {
             return true;
@@ -472,7 +475,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         }
 
         if (useDiscountWithPAW(_paw, _tokenID)) {
-            price_ = price_.sub(price_.mul(pawDiscountRate[_paw]).div(10000));
+            price_ = price_.sub(price_.mul(pawDiscount[_paw]).div(10000));
         }
     }
 
@@ -493,7 +496,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
             terms.minimumPrice = 0;
         }
         if (useDiscountWithPAW(_paw, _tokenID)) {
-            price_ = price_.sub(price_.mul(pawDiscountRate[_paw]).div(10000));
+            price_ = price_.sub(price_.mul(pawDiscount[_paw]).div(10000));
         }
     }
 

@@ -299,7 +299,7 @@ describe('OtterPAWBondStakeDepository', function () {
       ).to.changeTokenBalance(sClam, deployer, parseUnits('265', 9))
     })
 
-    it('should deploy twice and redeem sCLAM when vested fully', async function () {
+    it('should deposit twice and redeem sCLAM when vested fully', async function () {
       await treasury.deposit(
         parseEther('100000'),
         dai.address,
@@ -373,7 +373,7 @@ describe('OtterPAWBondStakeDepository', function () {
       ).to.changeTokenBalance(sClam, depositor, '331847447121')
     })
 
-    it('should able buy with paw discount', async function () {
+    it('should able to buy with paw discount', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const diamondHand = await PAW.deploy(
         'diamond hand otter',
@@ -443,7 +443,7 @@ describe('OtterPAWBondStakeDepository', function () {
       expect(await diamondHand.ownerOf(tokenID)).to.eq(deployer.address)
     })
 
-    it('should able buy twice with paw discount', async function () {
+    it('should able to buy twice with paw discount', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const diamondHand = await PAW.deploy(
         'diamond hand otter',
@@ -479,7 +479,7 @@ describe('OtterPAWBondStakeDepository', function () {
         initialBondDebt
       )
       await daiBond.setPAWDiscount(diamondHand.address, 1000) // 10% discount
-      await daiBond.setPAWDiscount(stoneHand.address, 500) // 10% discount
+      await daiBond.setPAWDiscount(stoneHand.address, 500) // 5% discount
 
       await diamondHand.setWhitelist([deployer.address])
       await diamondHand.claim()
