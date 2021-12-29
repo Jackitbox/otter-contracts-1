@@ -9,7 +9,7 @@
     "test": "NODE_ENV=test npx hardhat test",
     "compile": "npx hardhat compile",
     "clean": "npx hardhat clean",
-    "lint:sol": "solhint -f table contracts/**/*.sol",
+    "lint:sol": "solhint -f table **/*.sol",
     "format:sol": "./node_modules/.bin/prettier --write **/*.sol",
     "bonds:monitor": "npx hardhat run ./scripts/monitorBonds.js --network polygon-mainnet",
     "bonds:adjust": "npx hardhat run ./scripts/adjustBonds.js --network polygon-mainnet"
