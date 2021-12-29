@@ -270,11 +270,11 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         decayDebt();
         require(totalDebt <= terms.maxDebt, 'Max capacity reached');
 
-        uint256 priceInUSD = bondPriceInUSD(_paw, _tokenID); // Stored in bond info
+        uint256 priceInUSD = bondPriceInUSD(_paw); // Stored in bond info
         //uint nativePrice = _bondPrice();
 
         require(
-            _maxPrice >= _bondPrice(_paw, _tokenID),
+            _maxPrice >= _bondPrice(_paw),
             'Slippage limit: more than max price'
         ); // slippage protection
 
@@ -282,7 +282,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
             principle,
             _amount
         );
-        uint256 payout = payoutFor(value, _paw, _tokenID); // payout to bonder is computed
+        uint256 payout = payoutFor(value, _paw); // payout to bonder is computed
 
         require(payout >= 10000000, 'Bond too small'); // must be > 0.01 CLAM ( underflow protection )
         require(payout <= maxPayout(), 'Bond too large'); // size protection because there is no slippage
@@ -291,7 +291,10 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         uint256 fee = payout.mul(terms.fee).div(10000);
         uint256 profit = value.sub(payout).sub(fee);
 
-        if (useDiscountWithPAW(_paw, _tokenID)) {
+        if (
+            useDiscountWithPAW(_paw) &&
+            IERC721(_paw).ownerOf(_tokenID) == msg.sender
+        ) {
             IERC721(_paw).safeTransferFrom(msg.sender, address(this), _tokenID);
             discountInfo[_depositor].push(
                 Discount({
@@ -335,8 +338,8 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
             priceInUSD
         );
         emit BondPriceChanged(
-            bondPriceInUSD(address(0), 0),
-            _bondPrice(address(0), 0),
+            bondPriceInUSD(address(0)),
+            _bondPrice(address(0)),
             debtRatio()
         );
 
@@ -427,31 +430,22 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
      *  @param _value uint
      *  @return uint
      */
-    function payoutFor(
-        uint256 _value,
-        address _paw,
-        uint256 _tokenID
-    ) public view returns (uint256) {
+    function payoutFor(uint256 _value, address _paw)
+        public
+        view
+        returns (uint256)
+    {
         return
-            FixedPoint
-                .fraction(_value, bondPrice(_paw, _tokenID))
-                .decode112with18()
-                .div(1e16);
+            FixedPoint.fraction(_value, bondPrice(_paw)).decode112with18().div(
+                1e16
+            );
     }
 
     /**
      *  @notice check whether pay with paw or not
      */
-    function useDiscountWithPAW(address _paw, uint256 _tokenID)
-        internal
-        view
-        returns (bool)
-    {
-        if (
-            _paw != address(0) &&
-            pawDiscount[_paw] != 0 &&
-            IERC721(_paw).ownerOf(_tokenID) == msg.sender
-        ) {
+    function useDiscountWithPAW(address _paw) internal view returns (bool) {
+        if (_paw != address(0) && pawDiscount[_paw] != 0) {
             return true;
         } else {
             return false;
@@ -462,11 +456,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
      *  @notice calculate current bond premium
      *  @return price_ uint
      */
-    function bondPrice(address _paw, uint256 _tokenID)
-        public
-        view
-        returns (uint256 price_)
-    {
+    function bondPrice(address _paw) public view returns (uint256 price_) {
         price_ = terms.controlVariable.mul(debtRatio()).add(1000000000).div(
             1e7
         );
@@ -474,7 +464,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
             price_ = terms.minimumPrice;
         }
 
-        if (useDiscountWithPAW(_paw, _tokenID)) {
+        if (useDiscountWithPAW(_paw)) {
             price_ = price_.sub(price_.mul(pawDiscount[_paw]).div(10000));
         }
     }
@@ -483,10 +473,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
      *  @notice calculate current bond price and remove floor if above
      *  @return price_ uint
      */
-    function _bondPrice(address _paw, uint256 _tokenID)
-        internal
-        returns (uint256 price_)
-    {
+    function _bondPrice(address _paw) internal returns (uint256 price_) {
         price_ = terms.controlVariable.mul(debtRatio()).add(1000000000).div(
             1e7
         );
@@ -495,7 +482,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         } else if (terms.minimumPrice != 0) {
             terms.minimumPrice = 0;
         }
-        if (useDiscountWithPAW(_paw, _tokenID)) {
+        if (useDiscountWithPAW(_paw)) {
             price_ = price_.sub(price_.mul(pawDiscount[_paw]).div(10000));
         }
     }
@@ -504,21 +491,17 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
      *  @notice converts bond price to DAI value
      *  @return price_ uint
      */
-    function bondPriceInUSD(address _paw, uint256 _tokenID)
-        public
-        view
-        returns (uint256 price_)
-    {
+    function bondPriceInUSD(address _paw) public view returns (uint256 price_) {
         if (isLiquidityBond) {
-            price_ = bondPrice(_paw, _tokenID)
+            price_ = bondPrice(_paw)
                 .mul(
                     IOtterBondingCalculator(bondCalculator).markdown(principle)
                 )
                 .div(100);
         } else {
-            price_ = bondPrice(_paw, _tokenID)
-                .mul(10**IERC20(principle).decimals())
-                .div(100);
+            price_ = bondPrice(_paw).mul(10**IERC20(principle).decimals()).div(
+                100
+            );
         }
     }
 

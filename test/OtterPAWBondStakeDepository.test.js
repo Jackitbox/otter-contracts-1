@@ -231,7 +231,7 @@ describe('OtterPAWBondStakeDepository', function () {
         initialBondDebt
       )
 
-      let bondPrice = await daiBond.bondPriceInUSD(zeroAddress, 0)
+      let bondPrice = await daiBond.bondPriceInUSD(zeroAddress)
       console.log('bond price: ' + formatEther(bondPrice))
 
       await daiBond.deposit(
@@ -277,9 +277,7 @@ describe('OtterPAWBondStakeDepository', function () {
         initialBondDebt
       )
 
-      expect(await daiBond.bondPriceInUSD(zeroAddress, 0)).to.eq(
-        parseEther('4')
-      )
+      expect(await daiBond.bondPriceInUSD(zeroAddress)).to.eq(parseEther('4'))
 
       await expect(() =>
         daiBond.deposit(
@@ -323,9 +321,7 @@ describe('OtterPAWBondStakeDepository', function () {
         initialBondDebt
       )
 
-      expect(await daiBond.bondPriceInUSD(zeroAddress, 0)).to.eq(
-        parseEther('50')
-      )
+      expect(await daiBond.bondPriceInUSD(zeroAddress)).to.eq(parseEther('50'))
 
       await expect(() =>
         daiBond.deposit(
@@ -409,10 +405,8 @@ describe('OtterPAWBondStakeDepository', function () {
       await diamondHand.claim()
       const tokenID = diamondHand.claimed(deployer.address)
 
-      expect(await daiBond.bondPriceInUSD(zeroAddress, 0)).to.eq(
-        parseEther('4.0')
-      )
-      expect(await daiBond.bondPriceInUSD(diamondHand.address, tokenID)).to.eq(
+      expect(await daiBond.bondPriceInUSD(zeroAddress)).to.eq(parseEther('4.0'))
+      expect(await daiBond.bondPriceInUSD(diamondHand.address)).to.eq(
         parseEther('3.6')
       )
 
@@ -488,15 +482,13 @@ describe('OtterPAWBondStakeDepository', function () {
       const tokenIDofDiamondHand = await diamondHand.claimed(deployer.address)
       const tokenIDofStoneHand = await stoneHand.claimed(deployer.address)
 
-      expect(await daiBond.bondPriceInUSD(zeroAddress, 0)).to.eq(
-        parseEther('4.0')
+      expect(await daiBond.bondPriceInUSD(zeroAddress)).to.eq(parseEther('4.0'))
+      expect(await daiBond.bondPriceInUSD(diamondHand.address)).to.eq(
+        parseEther('3.6')
       )
-      expect(
-        await daiBond.bondPriceInUSD(diamondHand.address, tokenIDofDiamondHand)
-      ).to.eq(parseEther('3.6'))
-      expect(
-        await daiBond.bondPriceInUSD(stoneHand.address, tokenIDofStoneHand)
-      ).to.eq(parseEther('3.8'))
+      expect(await daiBond.bondPriceInUSD(stoneHand.address)).to.eq(
+        parseEther('3.8')
+      )
 
       await diamondHand.approve(daiBond.address, tokenIDofDiamondHand)
       await daiBond.deposit(
