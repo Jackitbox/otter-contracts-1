@@ -2,5 +2,5 @@
 pragma solidity 0.7.5;
 
 interface IPearlVault {
-    function epoch() external returns (uint256);
+    function epoch() external view returns (uint256);
 }

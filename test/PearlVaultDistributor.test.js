@@ -2,7 +2,7 @@ const { ethers, timeAndMine } = require('hardhat')
 const { expect } = require('chai')
 const { parseEther, parseUnits } = require('ethers/lib/utils')
 
-describe.only('PearlVaultDistributor', function () {
+describe('PearlVaultDistributor', function () {
   // Large number for approval for DAI
   const largeApproval = '100000000000000000000000000000000'
 
