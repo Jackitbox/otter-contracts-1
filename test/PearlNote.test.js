@@ -89,6 +89,21 @@ describe('PearlNote', function () {
       )
     })
 
+    it('should burn if unlocked all', async function () {
+      await mockVault.setEpoch(3)
+      await expect(() =>
+        mockVault.mint(note.address, user.address, 100, 5)
+      ).to.changeTokenBalance(dai, user, -100)
+
+      expect(await note.balanceOf(user.address)).to.eq(1)
+      await note.unlockAll()
+
+      const noteId = await note.tokenOfOwnerByIndex(user.address, 0)
+      await expect(() =>
+        mockVault.burn(note.address, noteId)
+      ).to.changeTokenBalance(dai, user, 100)
+    })
+
     it('should success mint two notes & burn', async function () {
       await mockVault.setEpoch(1)
       await expect(() =>
@@ -140,6 +155,10 @@ describe('PearlNote', function () {
       expect(await note.lockAmount(noteId)).to.eq(150)
       expect(await note.endEpoch(noteId)).to.eq(10)
       expect(await note.tokenURI(noteId)).to.eq('https://otter.note/0')
+
+      await expect(mockVault.burn(note.address, noteId)).to.be.revertedWith(
+        'PearlNote: the note is not expired'
+      )
 
       await mockVault.setEpoch(10)
 

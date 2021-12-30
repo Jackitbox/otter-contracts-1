@@ -8,7 +8,9 @@ import './interfaces/IPearlNote.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IPearlVault.sol';
 
-contract PearlNote is IPearlNote, ERC721 {
+import './types/Ownable.sol';
+
+contract PearlNote is IPearlNote, ERC721, Ownable {
     struct LockInfo {
         uint256 amount;
         uint256 endEpoch;
@@ -19,6 +21,7 @@ contract PearlNote is IPearlNote, ERC721 {
 
     IERC20 public immutable pearl;
     IPearlVault public immutable vault;
+    bool public unlockedAll;
 
     // token id => lock info
     mapping(uint256 => LockInfo) public lockInfos;
@@ -31,6 +34,8 @@ contract PearlNote is IPearlNote, ERC721 {
         address _pearl,
         address _vault
     ) ERC721(name, symbol) {
+        unlockedAll = false;
+
         _setBaseURI(baseURI);
 
         require(_pearl != address(0));
@@ -89,10 +94,12 @@ contract PearlNote is IPearlNote, ERC721 {
         returns (uint256)
     {
         LockInfo memory lockInfo = lockInfos[tokenId];
-        require(
-            lockInfo.endEpoch <= vault.epoch(),
-            'PearlNote: the note is not expired'
-        );
+        if (!unlockedAll) {
+            require(
+                lockInfo.endEpoch <= vault.epoch(),
+                'PearlNote: the note is not expired'
+            );
+        }
         address owner = ownerOf(tokenId);
         pearl.transfer(owner, lockInfo.amount);
         _burn(tokenId);
@@ -108,6 +115,11 @@ contract PearlNote is IPearlNote, ERC721 {
         pearl.transferFrom(msg.sender, address(this), _amount);
         lockInfo.amount = lockInfo.amount.add(_amount);
         lockInfo.endEpoch = _endEpoch;
+    }
+
+    /// @dev Emgerency use
+    function unlockAll() external onlyOwner {
+        unlockedAll = true;
     }
 
     modifier onlyVault() {
