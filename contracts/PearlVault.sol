@@ -52,8 +52,6 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
     mapping(uint256 => mapping(uint256 => uint256))
         public rewardPerBoostPointPaid;
 
-    uint256 private _totalLocked;
-
     /* ========== CONSTRUCTOR ========== */
 
     constructor(
@@ -84,7 +82,7 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
     }
 
     function totalLocked() external view returns (uint256) {
-        return _totalLocked;
+        return epochs[_epoch].totalLocked;
     }
 
     function balanceOf(uint256 termIndex, uint256 tokenId)
@@ -158,7 +156,7 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         uint256 tokenId = term.note.mint(msg.sender, amount, endEpoch);
 
         uint256 boostPoint = boostPointOf(termIndex, tokenId);
-        _totalLocked = _totalLocked.add(boostPoint);
+        epochs[_epoch].totalLocked = epochs[_epoch].totalLocked.add(boostPoint);
         unlockedBoostPoints[endEpoch] = unlockedBoostPoints[endEpoch].add(
             boostPoint
         );
@@ -166,16 +164,14 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         emit Locked(msg.sender, termIndex, tokenId, amount);
     }
 
-    function withdraw(uint256 termIndex, uint256 tokenId) public nonReentrant {
+    function redeem(uint256 termIndex, uint256 tokenId) public nonReentrant {
         harvest();
 
         Term memory term = terms[termIndex];
         require(terms[termIndex].note.ownerOf(tokenId) == msg.sender);
-        // uint256 boostPoint = boostPointOf(termIndex, tokenId);
-        // _totalLocked = _totalLocked.sub(boostPoint);
         uint256 amount = term.note.burn(tokenId);
 
-        emit Withdrawn(msg.sender, amount);
+        emit Redeemed(msg.sender, termIndex, tokenId, amount);
     }
 
     function claimReward(uint256 termIndex, uint256 tokenId)
@@ -196,14 +192,12 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
 
     function exit(uint256 termIndex, uint256 tokenId) external {
         claimReward(termIndex, tokenId);
-        withdraw(termIndex, tokenId);
+        redeem(termIndex, tokenId);
     }
 
     function harvest() public {
         if (epochs[_epoch].endTime <= block.timestamp) {
             Epoch storage e = epochs[_epoch];
-
-            e.totalLocked = _totalLocked;
             if (e.totalLocked > 0) {
                 e.rewardPerBoostPoint = e
                     .totalReward
@@ -221,14 +215,13 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
 
             // advance to next epoch
             _epoch = _epoch.add(1);
-            _totalLocked = _totalLocked.sub(unlockedBoostPoints[_epoch]);
             epochs[_epoch] = Epoch({
                 length: e.length,
                 number: _epoch,
                 endTime: e.endTime.add(e.length),
                 totalReward: e.totalReward.add(epochReward),
                 reward: epochReward,
-                totalLocked: _totalLocked,
+                totalLocked: e.totalLocked.sub(unlockedBoostPoints[_epoch]),
                 rewardPerBoostPoint: e.rewardPerBoostPoint
             });
             // console.log('epoch: %s reward: %s', _epoch, epochReward);
@@ -297,7 +290,12 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         uint256 tokenId,
         uint256 amount
     );
-    event Withdrawn(address indexed user, uint256 amount);
+    event Redeemed(
+        address indexed user,
+        uint256 indexed term,
+        uint256 indexed tokenId,
+        uint256 amount
+    );
     event RewardPaid(address indexed user, uint256 reward);
     event RewardsDurationUpdated(uint256 newDuration);
     event Recovered(address token, uint256 amount);

@@ -13,14 +13,8 @@ describe.only('Pearl Vault', function () {
   // How many seconds are in each epoch
   const epochLength = 100
 
-  // Initial reward rate for epoch
-  const initialRewardRate = '3000'
-
   // Ethereum 0 address, used when toggling changes in treasury
   const zeroAddress = '0x0000000000000000000000000000000000000000'
-
-  // Initial staking index
-  const initialIndex = '1000000000'
 
   let deployer, vault, mockDistributor, pearl, user1, user2, now
 
@@ -110,7 +104,7 @@ describe.only('Pearl Vault', function () {
       await vault.addTerm(note.address, minLockAmount, lockPeriod, multiplier)
     })
 
-    it('should get reward for nft owner', async function () {
+    it('should get reward', async function () {
       const term = 0
       const reward = 10
       await pearl.transfer(mockDistributor.address, reward)
@@ -137,7 +131,7 @@ describe.only('Pearl Vault', function () {
       expect(await pearl.balanceOf(vault.address)).to.eq(0)
     })
 
-    it('should get second reward for nft owner', async function () {
+    it('should exit with second reward', async function () {
       const term = 0
       const reward = 10
       await pearl.transfer(mockDistributor.address, reward)
@@ -280,6 +274,7 @@ describe.only('Pearl Vault', function () {
       await expect(() =>
         vault.connect(user2).exit(term, user2Note)
       ).to.changeTokenBalance(pearl, user2, 315)
+      expect(await vault.totalLocked()).to.eq(0)
     })
   })
 
@@ -322,6 +317,12 @@ describe.only('Pearl Vault', function () {
         note2MinAmount,
         note2MinLockPeriod,
         note2Multiplier
+      )
+    })
+
+    it('should failed to lock less than min requirement', async function () {
+      await expect(vault.connect(user1).lock(1, 50)).to.be.revertedWith(
+        'PearlVault: amount < min lock amount'
       )
     })
 
