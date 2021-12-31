@@ -103,6 +103,7 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         address owner = ownerOf(tokenId);
         pearl.transfer(owner, lockInfo.amount);
         _burn(tokenId);
+        delete lockInfos[tokenId];
         return lockInfo.amount;
     }
 
