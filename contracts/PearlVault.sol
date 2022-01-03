@@ -124,14 +124,13 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         view
         returns (uint256)
     {
-        uint256 e = validEpoch(noteAddr, tokenId);
         // console.log(
         //     'reward/point: %s, paid: %s',
         //     epochs[e].rewardPerBoostPoint,
         //     rewardPerBoostPointPaid[noteAddr][tokenId]
         // );
         return
-            epochs[e].rewardPerBoostPoint.sub(
+            epochs[validEpoch(noteAddr, tokenId)].rewardPerBoostPoint.sub(
                 rewardPerBoostPointPaid[noteAddr][tokenId]
             );
     }
@@ -204,7 +203,11 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         pearl.safeTransferFrom(msg.sender, address(this), amount);
         pearl.safeApprove(address(term.note), amount);
 
-        uint256 prevBoostPoint = term.note.lockAmount(tokenId);
+        uint256 prevBoostPoint = term
+            .note
+            .lockAmount(tokenId)
+            .mul(term.multiplier)
+            .div(100);
 
         uint256 endEpoch = _epoch.add(term.lockPeriod);
         term.note.extendLock(tokenId, amount, endEpoch);
@@ -225,7 +228,6 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
     function redeem(address noteAddr, uint256 tokenId) public nonReentrant {
         harvest();
 
-        _updateReward(noteAddr, tokenId);
         Term memory term = terms[noteAddr];
         require(
             terms[noteAddr].note.ownerOf(tokenId) == msg.sender,

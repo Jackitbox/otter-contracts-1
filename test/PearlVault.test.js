@@ -416,7 +416,7 @@ describe.only('Pearl Vault', function () {
   describe('extend note', function () {
     const minLockAmount = 0
     const lockPeriod = 2
-    const multiplier = 100
+    const multiplier = 200
     let note
 
     beforeEach(async function () {
