@@ -50,6 +50,15 @@ describe.only('Pearl Vault', function () {
     await pearl.connect(user2).approve(vault.address, largeApproval)
   })
 
+  async function nextEpoch(epoch = 1, harvest = true) {
+    for (let i = 0; i < epoch; i++) {
+      await timeAndMine.setTimeNextBlock((now += 100))
+      if (harvest) {
+        await vault.harvest()
+      }
+    }
+  }
+
   describe('terms', function () {
     let note
 
@@ -70,18 +79,25 @@ describe.only('Pearl Vault', function () {
       ).to.be.revertedWith('')
     })
 
+    it('failed to add duplicate note address', async function () {
+      await vault.addTerm(note.address, 10, 35, 100)
+      await expect(vault.addTerm(note.address, 10, 35, 100)).to.be.revertedWith(
+        'dupl'
+      )
+    })
+
     it('should add/disable term success', async function () {
       await vault.addTerm(note.address, 10, 35, 100)
 
-      let term = await vault.terms(0)
+      let term = await vault.terms(note.address)
       expect(term.note).to.eq(note.address)
       expect(term.minLockAmount).to.eq(10)
       expect(term.lockPeriod).to.eq(35)
       expect(term.multiplier).to.eq(100)
       expect(term.enabled).to.be.true
 
-      await vault.disableTerm(0)
-      term = await vault.terms(0)
+      await vault.disableTerm(note.address)
+      term = await vault.terms(note.address)
       expect(term.enabled).to.be.false
     })
   })
@@ -105,7 +121,7 @@ describe.only('Pearl Vault', function () {
     })
 
     it('should get reward', async function () {
-      const term = 0
+      const term = note.address
       const reward = 10
       await pearl.transfer(mockDistributor.address, reward)
 
@@ -117,8 +133,7 @@ describe.only('Pearl Vault', function () {
 
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
 
-      now += 200
-      await timeAndMine.setTimeNextBlock(now)
+      await nextEpoch(2, false)
 
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
@@ -131,8 +146,28 @@ describe.only('Pearl Vault', function () {
       expect(await pearl.balanceOf(vault.address)).to.eq(0)
     })
 
+    it('should failed to reward if not note owner', async function () {
+      const term = note.address
+      const reward = 10
+      await pearl.transfer(mockDistributor.address, reward)
+
+      await expect(() =>
+        vault.connect(user1).lock(term, 100)
+      ).to.changeTokenBalance(pearl, user1, -100)
+
+      expect(await note.balanceOf(user1.address)).to.eq(1)
+
+      const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
+
+      await nextEpoch(2)
+
+      await expect(
+        vault.connect(user2).claimReward(term, noteId)
+      ).to.be.revertedWith('PearlVault: msg.sender is not the note owner')
+    })
+
     it('should exit with second reward', async function () {
-      const term = 0
+      const term = note.address
       const reward = 10
       await pearl.transfer(mockDistributor.address, reward)
       await vault.harvest()
@@ -144,8 +179,7 @@ describe.only('Pearl Vault', function () {
       expect(await note.balanceOf(user1.address)).to.eq(1)
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
 
-      now += 200
-      await timeAndMine.setTimeNextBlock(now)
+      await nextEpoch(2, false)
 
       await pearl.transfer(mockDistributor.address, 20)
 
@@ -161,7 +195,7 @@ describe.only('Pearl Vault', function () {
     })
 
     it('should get all reward', async function () {
-      const term = 0
+      const term = note.address
       const reward = 10
       await pearl.transfer(mockDistributor.address, reward)
       await vault.harvest()
@@ -173,11 +207,9 @@ describe.only('Pearl Vault', function () {
       expect(await note.balanceOf(user1.address)).to.eq(1)
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
 
-      now += 200
-      await timeAndMine.setTimeNextBlock(now)
-
       await pearl.transfer(mockDistributor.address, 20)
-      await vault.harvest()
+      await nextEpoch(2)
+
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
       ).to.changeTokenBalance(pearl, user1, 30)
@@ -190,9 +222,17 @@ describe.only('Pearl Vault', function () {
     })
 
     it('should get reward after claim', async function () {
-      await vault.addTerm(note.address, minLockAmount, 3, multiplier)
+      const Note = await ethers.getContractFactory('PearlNote')
+      const note2 = await Note.deploy(
+        'Note',
+        'NOTE',
+        'https://example.com/diamond',
+        pearl.address,
+        vault.address
+      )
+      await vault.addTerm(note2.address, minLockAmount, 3, multiplier)
 
-      const term = 0
+      const term = note2.address
       const reward = 10
       await pearl.transfer(mockDistributor.address, reward)
       await vault.harvest()
@@ -201,11 +241,11 @@ describe.only('Pearl Vault', function () {
         vault.connect(user1).lock(term, 100)
       ).to.changeTokenBalance(pearl, user1, -100)
 
-      expect(await note.balanceOf(user1.address)).to.eq(1)
-      const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
+      expect(await note2.balanceOf(user1.address)).to.eq(1)
+      const noteId = await note2.tokenOfOwnerByIndex(user1.address, 0)
 
-      now += 200
-      await timeAndMine.setTimeNextBlock(now)
+      await nextEpoch(3, false)
+
       await pearl.transfer(mockDistributor.address, 20)
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
@@ -222,7 +262,7 @@ describe.only('Pearl Vault', function () {
     })
 
     it('should forbid exit if the nft is not expired', async function () {
-      const term = 0
+      const term = note.address
       const reward = 20
       await pearl.transfer(mockDistributor.address, reward)
 
@@ -230,8 +270,7 @@ describe.only('Pearl Vault', function () {
         vault.connect(user1).lock(term, 100)
       ).to.changeTokenBalance(pearl, user1, -100)
 
-      now += 100
-      await timeAndMine.setTimeNextBlock(now)
+      await nextEpoch(1, false)
 
       expect(await note.balanceOf(user1.address)).to.eq(1)
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
@@ -245,7 +284,7 @@ describe.only('Pearl Vault', function () {
     })
 
     it('should split rewards to 2 nfts', async function () {
-      const term = 0
+      const term = note.address
 
       const reward = 20
       await pearl.transfer(mockDistributor.address, reward)
@@ -255,12 +294,7 @@ describe.only('Pearl Vault', function () {
       await vault.connect(user1).lock(term, 100)
       await vault.connect(user2).lock(term, 300)
 
-      now += 100
-      await timeAndMine.setTimeNextBlock(now)
-      await vault.harvest()
-      now += 100
-      await timeAndMine.setTimeNextBlock(now)
-      await vault.harvest()
+      await nextEpoch(2)
 
       const user1Note = await note.tokenOfOwnerByIndex(user1.address, 0)
       await expect(() =>
@@ -321,9 +355,9 @@ describe.only('Pearl Vault', function () {
     })
 
     it('should failed to lock less than min requirement', async function () {
-      await expect(vault.connect(user1).lock(1, 50)).to.be.revertedWith(
-        'PearlVault: amount < min lock amount'
-      )
+      await expect(
+        vault.connect(user1).lock(note2.address, 50)
+      ).to.be.revertedWith('PearlVault: amount < min lock amount')
     })
 
     it('should split rewards to 2 notes', async function () {
@@ -331,27 +365,23 @@ describe.only('Pearl Vault', function () {
       await pearl.transfer(mockDistributor.address, reward)
 
       // user1 lock to note1
-      await vault.connect(user1).lock(0, 100) // epoch 1 -> 2
+      await vault.connect(user1).lock(note1.address, 100) // epoch 1 -> 2
       const user1Note = await note1.tokenOfOwnerByIndex(user1.address, 0)
       expect(await note1.endEpoch(user1Note)).to.eq(4)
 
       // user2 lock to note2
-      await vault.connect(user2).lock(1, 100)
+      await vault.connect(user2).lock(note2.address, 100)
       const user2Note = await note2.tokenOfOwnerByIndex(user2.address, 0)
       expect(await note2.endEpoch(user2Note)).to.eq(5)
 
-      now += 300
-      await timeAndMine.setTime(now)
-      await vault.harvest() // epoch 2 -> 3
-      await vault.harvest() // epoch 3 -> 4
-      await vault.harvest() // epoch 4 -> 5
+      await nextEpoch(3)
 
       await expect(() =>
-        vault.connect(user1).exit(0, user1Note)
+        vault.connect(user1).exit(note1.address, user1Note)
       ).to.changeTokenBalance(pearl, user1, 110)
 
       await expect(() =>
-        vault.connect(user2).exit(1, user2Note)
+        vault.connect(user2).exit(note2.address, user2Note)
       ).to.changeTokenBalance(pearl, user2, 120)
     })
 
@@ -361,27 +391,142 @@ describe.only('Pearl Vault', function () {
       await vault.harvest() // epoch 1 -> 2
 
       // user1 lock to note1
-      await vault.connect(user1).lock(0, 100)
+      await vault.connect(user1).lock(note1.address, 100)
       const user1Note = await note1.tokenOfOwnerByIndex(user1.address, 0)
       // user2 lock to note2
-      await vault.connect(user2).lock(1, 100)
+      await vault.connect(user2).lock(note2.address, 100)
       const user2Note = await note2.tokenOfOwnerByIndex(user2.address, 0)
 
-      now += 500
-      await timeAndMine.setTime(now)
-      await vault.harvest() // epoch 2 -> 3
+      await nextEpoch()
 
       reward = 200
       await pearl.transfer(mockDistributor.address, reward)
-      await vault.harvest() // epoch 3 -> 4
+      await nextEpoch(3)
 
       await expect(() =>
-        vault.connect(user1).exit(0, user1Note)
+        vault.connect(user1).exit(note1.address, user1Note)
       ).to.changeTokenBalance(pearl, user1, 110)
 
       await expect(() =>
-        vault.connect(user2).exit(1, user2Note)
+        vault.connect(user2).exit(note2.address, user2Note)
       ).to.changeTokenBalance(pearl, user2, 320)
+    })
+  })
+
+  describe('extend note', function () {
+    const minLockAmount = 0
+    const lockPeriod = 2
+    const multiplier = 100
+    let note
+
+    beforeEach(async function () {
+      const Note = await ethers.getContractFactory('PearlNote')
+      note = await Note.deploy(
+        'Note',
+        'NOTE',
+        'https://example.com/diamond',
+        pearl.address,
+        vault.address
+      )
+      await vault.addTerm(note.address, minLockAmount, lockPeriod, multiplier)
+    })
+
+    it('extend non-expired note', async function () {
+      const term = note.address
+      const reward = 10
+      await pearl.transfer(mockDistributor.address, reward)
+
+      await expect(() =>
+        vault.connect(user1).lock(term, 100)
+      ).to.changeTokenBalance(pearl, user1, -100)
+
+      expect(await note.balanceOf(user1.address)).to.eq(1)
+
+      now += 100
+      await timeAndMine.setTimeNextBlock(now)
+
+      await pearl.transfer(mockDistributor.address, 30)
+
+      const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
+      await expect(() =>
+        vault.connect(user1).extendLock(term, noteId, 50)
+      ).to.changeTokenBalance(pearl, user1, -50)
+
+      now += 200
+      await timeAndMine.setTimeNextBlock(now)
+
+      await expect(() =>
+        vault.connect(user1).claimReward(term, noteId)
+      ).to.changeTokenBalance(pearl, user1, 40)
+
+      await expect(() =>
+        vault.connect(user1).exit(term, noteId)
+      ).to.changeTokenBalance(pearl, user1, 150)
+
+      expect(await pearl.balanceOf(vault.address)).to.eq(0)
+    })
+
+    it('failed to extend an expired note ', async function () {
+      const term = note.address
+      const reward = 10
+      await pearl.transfer(mockDistributor.address, reward)
+
+      await expect(() =>
+        vault.connect(user1).lock(term, 100)
+      ).to.changeTokenBalance(pearl, user1, -100) // 1 -> 2
+
+      expect(await note.balanceOf(user1.address)).to.eq(1)
+
+      await nextEpoch(5)
+
+      const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
+      await expect(
+        vault.connect(user1).extendLock(term, noteId, 50)
+      ).to.be.revertedWith('PearlVault: the note is expired') // 3 -> 4, expired
+
+      await expect(() =>
+        vault.connect(user1).claimReward(term, noteId)
+      ).to.changeTokenBalance(pearl, user1, 10)
+
+      await expect(() =>
+        vault.connect(user1).exit(term, noteId)
+      ).to.changeTokenBalance(pearl, user1, 100)
+
+      expect(await pearl.balanceOf(vault.address)).to.eq(0)
+    })
+
+    it.skip('should split rewards to 2 notes', async function () {
+      const term = 0
+
+      const reward = 20
+      await pearl.transfer(mockDistributor.address, reward)
+      await vault.harvest() // 1 -> 2
+
+      await vault.connect(user1).lock(term, 100)
+      const user1Note = await note.tokenOfOwnerByIndex(user1.address, 0)
+
+      await pearl.transfer(mockDistributor.address, 10)
+      await timeAndMine.setTimeNextBlock((now += 100))
+      await vault.connect(user2).lock(term, 300) // 2 -> 3
+
+      expect(await vault.epoch()).to.eq(3)
+
+      await timeAndMine.setTimeNextBlock((now += 100))
+      await vault.harvest() // 3 -> 4
+      expect(await vault.reward(term, user1Note)).to.eq(30)
+
+      // await expect(() =>
+      //   vault.connect(user1).claimReward(term, user1Note)
+      // ).to.changeTokenBalance(pearl, user1, 5)
+      // await expect(() =>
+      //   vault.connect(user1).exit(term, user1Note)
+      // ).to.changeTokenBalance(pearl, user1, 100)
+
+      // const user2Note = await note.tokenOfOwnerByIndex(user2.address, 0)
+      // await expect(() =>
+      //   vault.connect(user2).exit(term, user2Note)
+      // ).to.changeTokenBalance(pearl, user2, 315)
+      // expect(await vault.totalLocked()).to.eq(0)
     })
   })
 })

@@ -57,7 +57,6 @@ describe('PearlNote', function () {
     })
 
     it('should success mint & burn', async function () {
-      await mockVault.setEpoch(3)
       await expect(() =>
         mockVault.mint(note.address, user.address, 100, 3)
       ).to.changeTokenBalance(dai, user, -100)
@@ -68,6 +67,8 @@ describe('PearlNote', function () {
       expect(await note.lockAmount(noteId)).to.eq(100)
       expect(await note.endEpoch(noteId)).to.eq(3)
       expect(await note.tokenURI(noteId)).to.eq('https://otter.note/0')
+
+      await mockVault.setEpoch(3)
 
       await expect(() =>
         mockVault.burn(note.address, noteId)

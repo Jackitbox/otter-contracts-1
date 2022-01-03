@@ -47,10 +47,15 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
     // epoch -> unlocked boost points
     mapping(uint256 => uint256) public unlockedBoostPoints;
 
-    Term[] public terms;
-    // term -> token id -> reward paid
-    mapping(uint256 => mapping(uint256 => uint256))
+    // note address -> term
+    mapping(address => Term) public terms;
+    address[] public termAddresses;
+
+    // note address -> token id -> reward paid
+    mapping(address => mapping(uint256 => uint256))
         public rewardPerBoostPointPaid;
+    // note address  -> token id -> reward
+    mapping(address => mapping(uint256 => uint256)) public rewards;
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -85,52 +90,50 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         return epochs[_epoch].totalLocked;
     }
 
-    function balanceOf(uint256 termIndex, uint256 tokenId)
+    function balanceOf(address noteAddr, uint256 tokenId)
         public
         view
         returns (uint256)
     {
-        return terms[termIndex].note.lockAmount(tokenId);
+        return terms[noteAddr].note.lockAmount(tokenId);
     }
 
-    function boostPointOf(uint256 termIndex, uint256 tokenId)
+    function boostPointOf(address noteAddr, uint256 tokenId)
         public
         view
         returns (uint256)
     {
-        Term memory term = terms[termIndex];
+        Term memory term = terms[noteAddr];
         return term.note.lockAmount(tokenId).mul(term.multiplier).div(100);
     }
 
-    function rewardPerBoostPoint(uint256 termIndex, uint256 tokenId)
+    function rewardPerBoostPoint(address noteAddr, uint256 tokenId)
         public
         view
         returns (uint256)
     {
-        IPearlNote note = terms[termIndex].note;
+        IPearlNote note = terms[noteAddr].note;
         uint256 e = _epoch < note.endEpoch(tokenId)
             ? _epoch
             : note.endEpoch(tokenId).sub(1);
         return
             epochs[e].rewardPerBoostPoint.sub(
-                rewardPerBoostPointPaid[termIndex][tokenId]
+                rewardPerBoostPointPaid[noteAddr][tokenId]
             );
     }
 
-    function pendingReward(uint256 termIndex, uint256 tokenId)
-        public
+    function reward(address noteAddr, uint256 tokenId)
+        external
         view
         returns (uint256)
     {
         return
-            boostPointOf(termIndex, tokenId)
-                .mul(rewardPerBoostPoint(termIndex, tokenId))
-                .div(1e18);
+            rewards[noteAddr][tokenId].add(_pendingReward(noteAddr, tokenId));
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function lock(uint256 termIndex, uint256 amount)
+    function lock(address noteAddr, uint256 amount)
         external
         nonReentrant
         notPaused
@@ -143,7 +146,7 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         // );
         harvest();
 
-        Term memory term = terms[termIndex];
+        Term memory term = terms[noteAddr];
         require(amount > 0, 'PearlVault: cannot lock 0 amount');
         require(term.enabled, 'PearVault: term disabled');
         require(
@@ -155,44 +158,91 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         uint256 endEpoch = _epoch.add(term.lockPeriod);
         uint256 tokenId = term.note.mint(msg.sender, amount, endEpoch);
 
-        uint256 boostPoint = boostPointOf(termIndex, tokenId);
+        uint256 boostPoint = boostPointOf(noteAddr, tokenId);
         epochs[_epoch].totalLocked = epochs[_epoch].totalLocked.add(boostPoint);
         unlockedBoostPoints[endEpoch] = unlockedBoostPoints[endEpoch].add(
             boostPoint
         );
 
-        emit Locked(msg.sender, termIndex, tokenId, amount);
+        emit Locked(msg.sender, noteAddr, tokenId, amount);
     }
 
-    function redeem(uint256 termIndex, uint256 tokenId) public nonReentrant {
+    function extendLock(
+        address noteAddr,
+        uint256 tokenId,
+        uint256 amount
+    ) external {
         harvest();
 
-        Term memory term = terms[termIndex];
-        require(terms[termIndex].note.ownerOf(tokenId) == msg.sender);
-        uint256 amount = term.note.burn(tokenId);
+        Term memory term = terms[noteAddr];
+        require(amount > 0, 'PearlVault: cannot lock 0 amount');
+        require(term.enabled, 'PearVault: term disabled');
+        require(
+            terms[noteAddr].note.ownerOf(tokenId) == msg.sender,
+            'PearlVault: msg.sender is not the note owner'
+        );
+        uint256 prevEndEpoch = term.note.endEpoch(tokenId);
+        require(prevEndEpoch > _epoch, 'PearlVault: the note is expired');
+        _updateReward(noteAddr, tokenId);
 
-        emit Redeemed(msg.sender, termIndex, tokenId, amount);
+        pearl.safeTransferFrom(msg.sender, address(this), amount);
+        pearl.safeApprove(address(term.note), amount);
+
+        uint256 prevBoostPoint = term.note.lockAmount(tokenId);
+
+        uint256 endEpoch = _epoch.add(term.lockPeriod);
+        term.note.extendLock(tokenId, amount, endEpoch);
+
+        uint256 boostPoint = boostPointOf(noteAddr, tokenId);
+        epochs[_epoch].totalLocked = epochs[_epoch].totalLocked.add(
+            amount.mul(term.multiplier).div(100)
+        );
+        unlockedBoostPoints[prevEndEpoch] = unlockedBoostPoints[prevEndEpoch]
+            .sub(prevBoostPoint);
+        unlockedBoostPoints[endEpoch] = unlockedBoostPoints[endEpoch].add(
+            boostPoint
+        );
+
+        emit Locked(msg.sender, noteAddr, tokenId, amount);
     }
 
-    function claimReward(uint256 termIndex, uint256 tokenId)
+    function redeem(address noteAddr, uint256 tokenId) public nonReentrant {
+        harvest();
+
+        Term memory term = terms[noteAddr];
+        require(
+            terms[noteAddr].note.ownerOf(tokenId) == msg.sender,
+            'PearlVault: msg.sender is not the note owner'
+        );
+        uint256 amount = term.note.burn(tokenId);
+
+        emit Redeemed(msg.sender, noteAddr, tokenId, amount);
+    }
+
+    function claimReward(address noteAddr, uint256 tokenId)
         public
         nonReentrant
     {
         harvest();
 
-        require(terms[termIndex].note.ownerOf(tokenId) == msg.sender);
-        uint256 reward = pendingReward(termIndex, tokenId);
-        if (reward > 0) {
-            pearl.transfer(msg.sender, reward);
-            rewardPerBoostPointPaid[termIndex][tokenId] = epochs[_epoch]
-                .rewardPerBoostPoint;
-            emit RewardPaid(msg.sender, reward);
+        require(
+            terms[noteAddr].note.ownerOf(tokenId) == msg.sender,
+            'PearlVault: msg.sender is not the note owner'
+        );
+        uint256 claimableReward = _updateReward(noteAddr, tokenId);
+        // uint256 reward = pendingReward(termIndex, tokenId);
+        if (claimableReward > 0) {
+            rewards[noteAddr][tokenId] = 0;
+            pearl.transfer(msg.sender, claimableReward);
+            // rewardPerBoostPointPaid[termIndex][tokenId] = epochs[_epoch]
+            // .rewardPerBoostPoint;
+            emit RewardPaid(msg.sender, noteAddr, tokenId, claimableReward);
         }
     }
 
-    function exit(uint256 termIndex, uint256 tokenId) external {
-        claimReward(termIndex, tokenId);
-        redeem(termIndex, tokenId);
+    function exit(address note, uint256 tokenId) external {
+        claimReward(note, tokenId);
+        redeem(note, tokenId);
     }
 
     function harvest() public {
@@ -208,6 +258,12 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
             } else {
                 e.totalReward = e.totalReward.sub(e.reward);
             }
+            console.log(
+                'epoch: %s locked: %s reward/point: %s',
+                _epoch,
+                e.totalLocked,
+                e.rewardPerBoostPoint
+            );
 
             uint256 current = pearl.balanceOf(address(this));
             distributor.distribute();
@@ -224,8 +280,38 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
                 totalLocked: e.totalLocked.sub(unlockedBoostPoints[_epoch]),
                 rewardPerBoostPoint: e.rewardPerBoostPoint
             });
-            // console.log('epoch: %s reward: %s', _epoch, epochReward);
+            console.log(
+                'epoch: %s locked: %s reward: %s',
+                _epoch,
+                epochs[_epoch].totalLocked,
+                epochReward
+            );
         }
+    }
+
+    /* ========== INTERNAL FUNCTIONS ========== */
+
+    function _updateReward(address noteAddr, uint256 tokenId)
+        internal
+        returns (uint256)
+    {
+        rewards[noteAddr][tokenId] = rewards[noteAddr][tokenId].add(
+            _pendingReward(noteAddr, tokenId)
+        );
+        rewardPerBoostPointPaid[noteAddr][tokenId] = epochs[_epoch]
+            .rewardPerBoostPoint;
+        return rewards[noteAddr][tokenId];
+    }
+
+    function _pendingReward(address noteAddr, uint256 tokenId)
+        internal
+        view
+        returns (uint256)
+    {
+        return
+            boostPointOf(noteAddr, tokenId)
+                .mul(rewardPerBoostPoint(noteAddr, tokenId))
+                .div(1e18);
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -245,33 +331,36 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
     }
 
     function addTerm(
-        address _note,
-        uint256 _minLockAmount,
-        uint256 _lockPeriod,
-        uint16 _multiplier
+        address note_,
+        uint256 minLockAmount_,
+        uint256 lockPeriod_,
+        uint16 multiplier_
     ) public onlyOwner {
         require(
-            _multiplier < 1000,
+            multiplier_ < 1000,
             'PearlVault: multiplier cannot larger than x10'
         );
-        IPearlNote note = IPearlNote(_note);
+        require(
+            terms[note_].multiplier == 0,
+            'PearlVault: duplicate note added'
+        );
+        IPearlNote note = IPearlNote(note_);
         // @dev: check the note address is valid
         note.lockAmount(0);
-        terms.push(
-            Term({
-                note: note,
-                minLockAmount: _minLockAmount,
-                lockPeriod: _lockPeriod,
-                multiplier: _multiplier,
-                enabled: true
-            })
-        );
-        emit TermAdded(_note, _minLockAmount, _lockPeriod, _multiplier);
+        terms[note_] = Term({
+            note: note,
+            minLockAmount: minLockAmount_,
+            lockPeriod: lockPeriod_,
+            multiplier: multiplier_,
+            enabled: true
+        });
+        termAddresses.push(note_);
+        emit TermAdded(note_, minLockAmount_, lockPeriod_, multiplier_);
     }
 
-    function disableTerm(uint256 index) external onlyOwner {
-        terms[index].enabled = false;
-        emit TermDisabled(address(terms[index].note), index);
+    function disableTerm(address note_) external onlyOwner {
+        terms[note_].enabled = false;
+        emit TermDisabled(note_);
     }
 
     /* ========== EVENTS ========== */
@@ -282,21 +371,26 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         uint256 lockPeriod,
         uint16 multiplier
     );
-    event TermDisabled(address indexed note, uint256 index);
-    event RewardAdded(uint256 reward);
+    event TermDisabled(address indexed note);
+    event RewardAdded(uint256 epoch, uint256 reward);
     event Locked(
         address indexed user,
-        uint256 term,
-        uint256 tokenId,
+        address indexed note,
+        uint256 indexed tokenId,
         uint256 amount
     );
     event Redeemed(
         address indexed user,
-        uint256 indexed term,
+        address indexed note,
         uint256 indexed tokenId,
         uint256 amount
     );
-    event RewardPaid(address indexed user, uint256 reward);
+    event RewardPaid(
+        address indexed user,
+        address indexed note,
+        uint256 indexed tokenId,
+        uint256 reward
+    );
     event RewardsDurationUpdated(uint256 newDuration);
     event Recovered(address token, uint256 amount);
 }
