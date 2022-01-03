@@ -452,8 +452,7 @@ describe.only('Pearl Vault', function () {
         vault.connect(user1).extendLock(term, noteId, 50)
       ).to.changeTokenBalance(pearl, user1, -50)
 
-      now += 200
-      await timeAndMine.setTimeNextBlock(now)
+      await nextEpoch(2)
 
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
@@ -495,8 +494,8 @@ describe.only('Pearl Vault', function () {
       expect(await pearl.balanceOf(vault.address)).to.eq(0)
     })
 
-    it.skip('should split rewards to 2 notes', async function () {
-      const term = 0
+    it('should split rewards to 2 notes', async function () {
+      const term = note.address
 
       const reward = 20
       await pearl.transfer(mockDistributor.address, reward)
@@ -505,28 +504,46 @@ describe.only('Pearl Vault', function () {
       await vault.connect(user1).lock(term, 100)
       const user1Note = await note.tokenOfOwnerByIndex(user1.address, 0)
 
-      await pearl.transfer(mockDistributor.address, 10)
-      await timeAndMine.setTimeNextBlock((now += 100))
-      await vault.connect(user2).lock(term, 300) // 2 -> 3
+      await pearl.transfer(mockDistributor.address, 100)
+      await nextEpoch(1, false)
+      await vault.connect(user2).lock(term, 300) // 2 -> 3, lock at 3
 
-      expect(await vault.epoch()).to.eq(3)
+      await expect(() =>
+        vault.connect(user1).extendLock(term, user1Note, 100)
+      ).to.changeTokenBalance(pearl, user1, -100)
 
-      await timeAndMine.setTimeNextBlock((now += 100))
-      await vault.harvest() // 3 -> 4
-      expect(await vault.reward(term, user1Note)).to.eq(30)
+      await pearl.transfer(mockDistributor.address, 20)
+      await nextEpoch() // 3 -> 4
+      expect(await vault.reward(term, user1Note)).to.eq(60)
 
-      // await expect(() =>
-      //   vault.connect(user1).claimReward(term, user1Note)
-      // ).to.changeTokenBalance(pearl, user1, 5)
-      // await expect(() =>
-      //   vault.connect(user1).exit(term, user1Note)
-      // ).to.changeTokenBalance(pearl, user1, 100)
+      await expect(() =>
+        vault.connect(user1).claimReward(term, user1Note)
+      ).to.changeTokenBalance(pearl, user1, 60)
 
-      // const user2Note = await note.tokenOfOwnerByIndex(user2.address, 0)
-      // await expect(() =>
-      //   vault.connect(user2).exit(term, user2Note)
-      // ).to.changeTokenBalance(pearl, user2, 315)
-      // expect(await vault.totalLocked()).to.eq(0)
+      await expect(
+        vault.connect(user1).exit(term, user1Note)
+      ).to.be.revertedWith('PearlNote: the note is not expired')
+
+      await pearl.transfer(mockDistributor.address, 20)
+      await nextEpoch()
+      await pearl.transfer(mockDistributor.address, 20)
+      await nextEpoch()
+
+      expect(await vault.reward(term, user1Note)).to.eq(8)
+
+      await expect(() =>
+        vault.connect(user1).exit(term, user1Note)
+      ).to.changeTokenBalance(pearl, user1, 208)
+
+      expect(await pearl.balanceOf(vault.address)).to.eq(112)
+
+      const user2Note = await note.tokenOfOwnerByIndex(user2.address, 0)
+      await expect(() =>
+        vault.connect(user2).exit(term, user2Note)
+      ).to.changeTokenBalance(pearl, user2, 372)
+
+      expect(await vault.totalLocked()).to.eq(0)
+      expect(await pearl.balanceOf(vault.address)).to.eq(40)
     })
   })
 })

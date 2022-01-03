@@ -107,15 +107,29 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         return term.note.lockAmount(tokenId).mul(term.multiplier).div(100);
     }
 
-    function rewardPerBoostPoint(address noteAddr, uint256 tokenId)
+    function validEpoch(address noteAddr, uint256 tokenId)
         public
         view
         returns (uint256)
     {
         IPearlNote note = terms[noteAddr].note;
-        uint256 e = _epoch < note.endEpoch(tokenId)
-            ? _epoch
-            : note.endEpoch(tokenId).sub(1);
+        return
+            _epoch < note.endEpoch(tokenId)
+                ? _epoch
+                : note.endEpoch(tokenId).sub(1);
+    }
+
+    function rewardPerBoostPoint(address noteAddr, uint256 tokenId)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 e = validEpoch(noteAddr, tokenId);
+        // console.log(
+        //     'reward/point: %s, paid: %s',
+        //     epochs[e].rewardPerBoostPoint,
+        //     rewardPerBoostPointPaid[noteAddr][tokenId]
+        // );
         return
             epochs[e].rewardPerBoostPoint.sub(
                 rewardPerBoostPointPaid[noteAddr][tokenId]
@@ -158,6 +172,8 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         uint256 endEpoch = _epoch.add(term.lockPeriod);
         uint256 tokenId = term.note.mint(msg.sender, amount, endEpoch);
 
+        rewardPerBoostPointPaid[noteAddr][tokenId] = epochs[_epoch]
+            .rewardPerBoostPoint;
         uint256 boostPoint = boostPointOf(noteAddr, tokenId);
         epochs[_epoch].totalLocked = epochs[_epoch].totalLocked.add(boostPoint);
         unlockedBoostPoints[endEpoch] = unlockedBoostPoints[endEpoch].add(
@@ -209,6 +225,7 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
     function redeem(address noteAddr, uint256 tokenId) public nonReentrant {
         harvest();
 
+        _updateReward(noteAddr, tokenId);
         Term memory term = terms[noteAddr];
         require(
             terms[noteAddr].note.ownerOf(tokenId) == msg.sender,
@@ -232,6 +249,7 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         uint256 claimableReward = _updateReward(noteAddr, tokenId);
         // uint256 reward = pendingReward(termIndex, tokenId);
         if (claimableReward > 0) {
+            // console.log('reward: %s', claimableReward);
             rewards[noteAddr][tokenId] = 0;
             pearl.transfer(msg.sender, claimableReward);
             // rewardPerBoostPointPaid[termIndex][tokenId] = epochs[_epoch]
@@ -258,12 +276,12 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
             } else {
                 e.totalReward = e.totalReward.sub(e.reward);
             }
-            console.log(
-                'epoch: %s locked: %s reward/point: %s',
-                _epoch,
-                e.totalLocked,
-                e.rewardPerBoostPoint
-            );
+            // console.log(
+            //     'distributed epoch: %s locked: %s reward/point: %s',
+            //     _epoch,
+            //     e.totalLocked,
+            //     e.rewardPerBoostPoint
+            // );
 
             uint256 current = pearl.balanceOf(address(this));
             distributor.distribute();
@@ -280,12 +298,12 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
                 totalLocked: e.totalLocked.sub(unlockedBoostPoints[_epoch]),
                 rewardPerBoostPoint: e.rewardPerBoostPoint
             });
-            console.log(
-                'epoch: %s locked: %s reward: %s',
-                _epoch,
-                epochs[_epoch].totalLocked,
-                epochReward
-            );
+            // console.log(
+            //     'start epoch: %s locked: %s reward: %s',
+            //     _epoch,
+            //     epochs[_epoch].totalLocked,
+            //     epochReward
+            // );
         }
     }
 
@@ -298,8 +316,9 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         rewards[noteAddr][tokenId] = rewards[noteAddr][tokenId].add(
             _pendingReward(noteAddr, tokenId)
         );
-        rewardPerBoostPointPaid[noteAddr][tokenId] = epochs[_epoch]
-            .rewardPerBoostPoint;
+        rewardPerBoostPointPaid[noteAddr][tokenId] = epochs[
+            validEpoch(noteAddr, tokenId)
+        ].rewardPerBoostPoint;
         return rewards[noteAddr][tokenId];
     }
 
