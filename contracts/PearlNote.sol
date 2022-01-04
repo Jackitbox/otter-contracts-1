@@ -15,13 +15,14 @@ interface IOtterPAWMintable {
 }
 
 contract PearlNote is IPearlNote, ERC721, Ownable {
+    using Counters for Counters.Counter;
+    using SafeMath for uint256;
+    using Strings for uint256;
+
     struct LockInfo {
         uint256 amount;
         uint256 endEpoch;
     }
-
-    using Counters for Counters.Counter;
-    using SafeMath for uint256;
 
     IERC20 public immutable pearl;
     IPearlVault public immutable vault;
@@ -49,8 +50,21 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         vault = IPearlVault(_vault);
     }
 
-    function nextTokenId() external view override returns (uint256) {
-        return _tokenIdTracker.current();
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return
+            string(
+                abi.encodePacked(
+                    super.baseURI(),
+                    toString(address(this)),
+                    '/',
+                    tokenId.toString()
+                )
+            );
     }
 
     function lockAmount(uint256 tokenId)
@@ -142,4 +156,21 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         );
         _;
     }
+}
+
+function toString(address x) pure returns (string memory) {
+    bytes memory s = new bytes(40);
+    for (uint256 i = 0; i < 20; i++) {
+        bytes1 b = bytes1(uint8(uint256(uint160(x)) / (2**(8 * (19 - i)))));
+        bytes1 hi = bytes1(uint8(b) / 16);
+        bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+        s[2 * i] = char(hi);
+        s[2 * i + 1] = char(lo);
+    }
+    return string(abi.encodePacked('0x', string(s)));
+}
+
+function char(bytes1 b) pure returns (bytes1 c) {
+    if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+    else return bytes1(uint8(b) + 0x57);
 }

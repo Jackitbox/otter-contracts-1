@@ -4,8 +4,6 @@ pragma solidity >=0.7.5;
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
 interface IPearlNote is IERC721 {
-    function nextTokenId() external view returns (uint256);
-
     function lockAmount(uint256 tokenId) external view returns (uint256);
 
     function endEpoch(uint256 tokenId) external view returns (uint256);

@@ -66,7 +66,9 @@ describe('PearlNote', function () {
       const noteId = await note.tokenOfOwnerByIndex(user.address, 0)
       expect(await note.lockAmount(noteId)).to.eq(100)
       expect(await note.endEpoch(noteId)).to.eq(3)
-      expect(await note.tokenURI(noteId)).to.eq('https://otter.note/0')
+      expect(await note.tokenURI(noteId)).to.eq(
+        `https://otter.note/${note.address.toLowerCase()}/0`
+      )
 
       await mockVault.setEpoch(3)
 
@@ -146,13 +148,17 @@ describe('PearlNote', function () {
       expect(await note.ownerOf(noteId)).to.eq(user.address)
       expect(await note.lockAmount(noteId)).to.eq(100)
       expect(await note.endEpoch(noteId)).to.eq(1)
-      expect(await note.tokenURI(noteId)).to.eq('https://otter.note/0')
+      expect(await note.tokenURI(noteId)).to.eq(
+        `https://otter.note/${note.address.toLowerCase()}/0`
+      )
 
       const noteId2 = await note.tokenOfOwnerByIndex(user.address, 1)
       expect(await note.ownerOf(noteId2)).to.eq(user.address)
       expect(await note.lockAmount(noteId2)).to.eq(200)
       expect(await note.endEpoch(noteId2)).to.eq(2)
-      expect(await note.tokenURI(noteId2)).to.eq('https://otter.note/1')
+      expect(await note.tokenURI(noteId2)).to.eq(
+        `https://otter.note/${note.address.toLowerCase()}/1`
+      )
 
       await expect(() =>
         mockVault.burn(note.address, noteId)
@@ -180,7 +186,9 @@ describe('PearlNote', function () {
 
       expect(await note.lockAmount(noteId)).to.eq(150)
       expect(await note.endEpoch(noteId)).to.eq(10)
-      expect(await note.tokenURI(noteId)).to.eq('https://otter.note/0')
+      expect(await note.tokenURI(noteId)).to.eq(
+        `https://otter.note/${note.address.toLowerCase()}/0`
+      )
 
       await expect(mockVault.burn(note.address, noteId)).to.be.revertedWith(
         'PearlNote: the note is not expired'
