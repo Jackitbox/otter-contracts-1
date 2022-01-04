@@ -76,6 +76,31 @@ describe('PearlNote', function () {
       expect(await note.balanceOf(user.address)).to.eq(0)
     })
 
+    it('should get paw when burned', async function () {
+      const OtterPAWMintable = await ethers.getContractFactory(
+        'OtterPAWMintable'
+      )
+      const paw = await OtterPAWMintable.deploy('paw', 'PAW', 'http://123')
+      await paw.setMinter(note.address)
+      await note.setPaw(paw.address)
+
+      await expect(() =>
+        mockVault.mint(note.address, user.address, 100, 3)
+      ).to.changeTokenBalance(dai, user, -100)
+
+      expect(await note.balanceOf(user.address)).to.eq(1)
+
+      const noteId = await note.tokenOfOwnerByIndex(user.address, 0)
+      await mockVault.setEpoch(3)
+
+      await expect(() =>
+        mockVault.burn(note.address, noteId)
+      ).to.changeTokenBalance(dai, user, 100)
+      expect(await note.balanceOf(user.address)).to.eq(0)
+
+      expect(await paw.balanceOf(user.address)).to.eq(1)
+    })
+
     it('should failed to burn if not expired', async function () {
       await mockVault.setEpoch(3)
       await expect(() =>

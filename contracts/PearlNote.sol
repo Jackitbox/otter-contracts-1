@@ -10,6 +10,10 @@ import './interfaces/IPearlVault.sol';
 
 import './types/Ownable.sol';
 
+interface IOtterPAWMintable {
+    function mint(address receipt) external;
+}
+
 contract PearlNote is IPearlNote, ERC721, Ownable {
     struct LockInfo {
         uint256 amount;
@@ -22,6 +26,7 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
     IERC20 public immutable pearl;
     IPearlVault public immutable vault;
     bool public unlockedAll;
+    IOtterPAWMintable public paw;
 
     // token id => lock info
     mapping(uint256 => LockInfo) public lockInfos;
@@ -66,6 +71,10 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         return lockInfos[tokenId].endEpoch;
     }
 
+    function setPaw(address paw_) external onlyOwner {
+        paw = IOtterPAWMintable(paw_);
+    }
+
     function mint(
         address _user,
         uint256 _amount,
@@ -103,6 +112,9 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         address owner = ownerOf(tokenId);
         pearl.transfer(owner, lockInfo.amount);
         _burn(tokenId);
+        if (address(paw) != address(0)) {
+            paw.mint(owner);
+        }
         delete lockInfos[tokenId];
         return lockInfo.amount;
     }
