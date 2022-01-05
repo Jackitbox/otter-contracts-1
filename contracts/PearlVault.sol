@@ -98,6 +98,10 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         return terms[noteAddr].note.lockAmount(tokenId);
     }
 
+    function termsCount() external view returns (uint256) {
+        return termAddresses.length;
+    }
+
     function boostPointOf(address noteAddr, uint256 tokenId)
         public
         view
@@ -384,6 +388,21 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         emit TermDisabled(note_);
     }
 
+    function removeTermAt(uint256 index) external onlyOwner {
+        require(index < termAddresses.length);
+        address termAddress = termAddresses[index];
+        address note = address(terms[termAddress].note);
+
+        // delete from map
+        delete terms[termAddress];
+
+        // delete from array
+        termAddresses[index] = termAddresses[termAddresses.length - 1];
+        delete termAddresses[termAddresses.length - 1];
+
+        emit TermRemoved(note);
+    }
+
     /* ========== EVENTS ========== */
 
     event TermAdded(
@@ -393,6 +412,7 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         uint16 multiplier
     );
     event TermDisabled(address indexed note);
+    event TermRemoved(address indexed note);
     event RewardAdded(uint256 epoch, uint256 reward);
     event Locked(
         address indexed user,
