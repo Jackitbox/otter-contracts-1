@@ -98,6 +98,10 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         return terms[noteAddr].note.lockAmount(tokenId);
     }
 
+    function termsCount() external view returns (uint256) {
+        return termAddresses.length;
+    }
+
     function boostPointOf(address noteAddr, uint256 tokenId)
         public
         view
