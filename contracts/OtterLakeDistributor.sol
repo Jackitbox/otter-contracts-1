@@ -12,7 +12,7 @@ import './types/Ownable.sol';
 
 import './libraries/SafeERC20.sol';
 
-contract PearlVaultDistributor is Ownable, IStakingDistributor {
+contract OtterLakeDistributor is Ownable, IStakingDistributor {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -31,7 +31,7 @@ contract PearlVaultDistributor is Ownable, IStakingDistributor {
 
     /* ====== STRUCTS ====== */
 
-    address public vault;
+    address public lake;
     uint256 public rate;
 
     struct Adjust {
@@ -47,7 +47,7 @@ contract PearlVaultDistributor is Ownable, IStakingDistributor {
         address clam_,
         address sClam_,
         address staking_,
-        address vault_,
+        address lake_,
         uint256 epochLength_,
         uint256 nextEpochTime_
     ) {
@@ -59,8 +59,8 @@ contract PearlVaultDistributor is Ownable, IStakingDistributor {
         sClam = IERC20(sClam_);
         require(staking_ != address(0));
         staking = IOtterStaking(staking_);
-        require(vault_ != address(0));
-        vault = vault_;
+        require(lake_ != address(0));
+        lake = lake_;
 
         epochLength = epochLength_;
         nextEpochTime = nextEpochTime_;
@@ -82,7 +82,7 @@ contract PearlVaultDistributor is Ownable, IStakingDistributor {
                 uint256 reward = nextRewardAt(rate);
                 require(
                     clam.balanceOf(address(this)) >= reward,
-                    'PearlVaultDistributor: clam balance lower than reward'
+                    'OtterLakeDistributor: clam balance lower than reward'
                 );
 
                 // stake
@@ -93,7 +93,7 @@ contract PearlVaultDistributor is Ownable, IStakingDistributor {
                 // convert sCLAM to PEARL
                 sClam.safeApprove(address(pearl), reward);
                 uint256 pearlAmount = pearl.wrap(reward);
-                pearl.transfer(vault, pearlAmount);
+                pearl.transfer(lake, pearlAmount);
             }
             adjust(); // check for adjustment
             return true;

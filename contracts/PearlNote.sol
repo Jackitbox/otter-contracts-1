@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/utils/Counters.sol';
 
 import './interfaces/IPearlNote.sol';
 import './interfaces/IERC20.sol';
-import './interfaces/IPearlVault.sol';
+import './interfaces/IOtterLake.sol';
 
 import './types/Ownable.sol';
 
@@ -25,7 +25,7 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
     }
 
     IERC20 public immutable pearl;
-    IPearlVault public immutable vault;
+    IOtterLake public immutable lake;
     bool public unlockedAll;
     IOtterPAWMintable public paw;
 
@@ -38,7 +38,7 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         string memory symbol,
         string memory baseURI,
         address _pearl,
-        address _vault
+        address _lake
     ) ERC721(name, symbol) {
         unlockedAll = false;
 
@@ -46,8 +46,8 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
 
         require(_pearl != address(0));
         pearl = IERC20(_pearl);
-        require(_vault != address(0));
-        vault = IPearlVault(_vault);
+        require(_lake != address(0));
+        lake = IOtterLake(_lake);
     }
 
     function tokenURI(uint256 tokenId)
@@ -93,7 +93,7 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         address _user,
         uint256 _amount,
         uint256 _endEpoch
-    ) external override onlyVault returns (uint256) {
+    ) external override onlyLake returns (uint256) {
         require(_amount > 0, "PearlNote: can't mint with 0 amount");
         pearl.transferFrom(msg.sender, address(this), _amount);
 
@@ -113,13 +113,13 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
     function burn(uint256 tokenId)
         external
         override
-        onlyVault
+        onlyLake
         returns (uint256)
     {
         LockInfo memory lockInfo = lockInfos[tokenId];
         if (!unlockedAll) {
             require(
-                lockInfo.endEpoch <= vault.epoch(),
+                lockInfo.endEpoch <= lake.epoch(),
                 'PearlNote: the note is not expired'
             );
         }
@@ -137,7 +137,7 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         uint256 _tokenId,
         uint256 _amount,
         uint256 _endEpoch
-    ) external override onlyVault {
+    ) external override onlyLake {
         LockInfo storage lockInfo = lockInfos[_tokenId];
         pearl.transferFrom(msg.sender, address(this), _amount);
         lockInfo.amount = lockInfo.amount.add(_amount);
@@ -149,10 +149,10 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         unlockedAll = true;
     }
 
-    modifier onlyVault() {
+    modifier onlyLake() {
         require(
-            address(vault) == msg.sender,
-            'VaultOwned: caller is not the Vault'
+            address(lake) == msg.sender,
+            'LakeOwned: caller is not the Lake'
         );
         _;
     }

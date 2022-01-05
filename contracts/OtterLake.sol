@@ -6,7 +6,7 @@ import 'hardhat/console.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IPearlNote.sol';
 import './interfaces/IStakingDistributor.sol';
-import './interfaces/IPearlVault.sol';
+import './interfaces/IOtterLake.sol';
 
 import './libraries/SafeMath.sol';
 import './libraries/SafeERC20.sol';
@@ -15,7 +15,7 @@ import './types/Pausable.sol';
 import './types/ReentrancyGuard.sol';
 
 // @dev: Modified from: https://docs.synthetix.io/contracts/source/contracts/stakingrewards
-contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
+contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -164,11 +164,11 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         harvest();
 
         Term memory term = terms[noteAddr];
-        require(amount > 0, 'PearlVault: cannot lock 0 amount');
+        require(amount > 0, 'OtterLake: cannot lock 0 amount');
         require(term.enabled, 'PearVault: term disabled');
         require(
             amount >= term.minLockAmount,
-            'PearlVault: amount < min lock amount'
+            'OtterLake: amount < min lock amount'
         );
         pearl.safeTransferFrom(msg.sender, address(this), amount);
         pearl.safeApprove(address(term.note), amount);
@@ -194,14 +194,14 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         harvest();
 
         Term memory term = terms[noteAddr];
-        require(amount > 0, 'PearlVault: cannot lock 0 amount');
+        require(amount > 0, 'OtterLake: cannot lock 0 amount');
         require(term.enabled, 'PearVault: term disabled');
         require(
             terms[noteAddr].note.ownerOf(tokenId) == msg.sender,
-            'PearlVault: msg.sender is not the note owner'
+            'OtterLake: msg.sender is not the note owner'
         );
         uint256 prevEndEpoch = term.note.endEpoch(tokenId);
-        require(prevEndEpoch > _epoch, 'PearlVault: the note is expired');
+        require(prevEndEpoch > _epoch, 'OtterLake: the note is expired');
         _updateReward(noteAddr, tokenId);
 
         pearl.safeTransferFrom(msg.sender, address(this), amount);
@@ -235,7 +235,7 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
         Term memory term = terms[noteAddr];
         require(
             terms[noteAddr].note.ownerOf(tokenId) == msg.sender,
-            'PearlVault: msg.sender is not the note owner'
+            'OtterLake: msg.sender is not the note owner'
         );
         uint256 amount = term.note.burn(tokenId);
 
@@ -250,7 +250,7 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
 
         require(
             terms[noteAddr].note.ownerOf(tokenId) == msg.sender,
-            'PearlVault: msg.sender is not the note owner'
+            'OtterLake: msg.sender is not the note owner'
         );
         uint256 claimableReward = _updateReward(noteAddr, tokenId);
         // uint256 reward = pendingReward(termIndex, tokenId);
@@ -363,11 +363,11 @@ contract PearlVault is IPearlVault, ReentrancyGuard, Pausable {
     ) public onlyOwner {
         require(
             multiplier_ < 1000,
-            'PearlVault: multiplier cannot larger than x10'
+            'OtterLake: multiplier cannot larger than x10'
         );
         require(
             terms[note_].multiplier == 0,
-            'PearlVault: duplicate note added'
+            'OtterLake: duplicate note added'
         );
         IPearlNote note = IPearlNote(note_);
         // @dev: check the note address is valid

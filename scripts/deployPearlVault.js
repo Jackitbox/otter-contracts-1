@@ -36,10 +36,6 @@ const POLYGON_MAINNET = {
   IDO: '0x7f637ea843405dff10592f894292a8f1188166f9',
 }
 
-const zeroAddress = '0x0000000000000000000000000000000000000000'
-const daoAddr = '0x929a27c46041196e1a49c7b459d63ec9a20cd879'
-const reserveAddr = '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'
-
 async function main() {
   const Staking = await ethers.getContractFactory('OtterStaking')
   const staking = Staking.attach(POLYGON_MAINNET.STAKING_ADDRESS)
@@ -49,7 +45,7 @@ async function main() {
   console.log('Epoch length : ' + epoch.length.toString())
   console.log('Epoch end time : ' + epoch.endTime.toString())
 
-  const Vault = await ethers.getContractFactory('PearlVault')
+  const Vault = await ethers.getContractFactory('OtterLake')
   const vault = await Vault.deploy(
     POLYGON_MAINNET.PEARL_ADDRESS,
     epoch.length,
@@ -59,10 +55,10 @@ async function main() {
   await vault.deployTransaction.wait()
   console.log('Pearl Vault deployed at: ' + vault.address)
 
-  const PearlVaultDistributor = await ethers.getContractFactory(
-    'PearlVaultDistributor'
+  const OtterLakeDistributor = await ethers.getContractFactory(
+    'OtterLakeDistributor'
   )
-  const pearlVaultDistributor = await PearlVaultDistributor.deploy(
+  const otterLakeDistributor = await OtterLakeDistributor.deploy(
     POLYGON_MAINNET.PEARL_ADDRESS,
     POLYGON_MAINNET.CLAM_ADDRESS,
     POLYGON_MAINNET.sCLAM_ADDRESS,
@@ -71,12 +67,12 @@ async function main() {
     epoch.length,
     epoch.endTime
   )
-  await pearlVaultDistributor.deployTransaction.wait()
+  await otterLakeDistributor.deployTransaction.wait()
   console.log(
-    'Pearl Vault Distributor deployed at: ' + pearlVaultDistributor.address
+    'Pearl Vault Distributor deployed at: ' + otterLakeDistributor.address
   )
 
-  await vault.setDistributor(pearlVaultDistributor.address)
+  await vault.setDistributor(otterLakeDistributor.address)
 
   // await hre.run('verify:verify', {
   //   address: bond.address,

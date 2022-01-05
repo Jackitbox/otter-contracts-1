@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
-import '../interfaces/IPearlVault.sol';
+import '../interfaces/IOtterLake.sol';
 import '../interfaces/IPearlNote.sol';
 import '../interfaces/IERC20.sol';
 
-contract MockVault is IPearlVault {
+contract MockLake is IOtterLake {
     uint256 private _epoch;
 
     IERC20 public immutable pearl;

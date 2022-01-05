@@ -2,7 +2,7 @@ const { ethers, timeAndMine } = require('hardhat')
 const { expect } = require('chai')
 const { parseEther, parseUnits } = require('ethers/lib/utils')
 
-describe('PearlVaultDistributor', function () {
+describe.only('OtterLakeDistributor', function () {
   // Large number for approval for DAI
   const largeApproval = '100000000000000000000000000000000'
 
@@ -28,7 +28,7 @@ describe('PearlVaultDistributor', function () {
     treasury,
     stakingDistributor,
     staking,
-    pearlVaultDistributor,
+    otterLakeDistributor,
     firstEpochTime
 
   beforeEach(async function () {
@@ -83,10 +83,10 @@ describe('PearlVaultDistributor', function () {
       sClam.address
     )
 
-    const PearlVaultDistributor = await ethers.getContractFactory(
-      'PearlVaultDistributor'
+    const OtterLakeDistributor = await ethers.getContractFactory(
+      'OtterLakeDistributor'
     )
-    pearlVaultDistributor = await PearlVaultDistributor.deploy(
+    otterLakeDistributor = await OtterLakeDistributor.deploy(
       pearl.address,
       clam.address,
       sClam.address,
@@ -127,24 +127,24 @@ describe('PearlVaultDistributor', function () {
         treasury.deposit(parseEther('1000'), dai.address, parseUnits('750', 9))
       ).to.changeTokenBalance(clam, deployer, parseUnits('250', 9))
 
-      await pearlVaultDistributor.setRate(200000)
-      await clam.transfer(pearlVaultDistributor.address, parseUnits('100', 9))
+      await otterLakeDistributor.setRate(200000)
+      await clam.transfer(otterLakeDistributor.address, parseUnits('100', 9))
 
-      await expect(() => pearlVaultDistributor.distribute()).changeTokenBalance(
+      await expect(() => otterLakeDistributor.distribute()).changeTokenBalance(
         pearl,
         deployer,
         parseEther('20')
       )
 
       // distribute again, epoch not end
-      await expect(() => pearlVaultDistributor.distribute()).changeTokenBalance(
+      await expect(() => otterLakeDistributor.distribute()).changeTokenBalance(
         pearl,
         deployer,
         parseEther('0')
       )
 
       timeAndMine.setTimeNextBlock(firstEpochTime + 200)
-      await expect(() => pearlVaultDistributor.distribute()).changeTokenBalance(
+      await expect(() => otterLakeDistributor.distribute()).changeTokenBalance(
         pearl,
         deployer,
         parseEther('16')
@@ -156,20 +156,20 @@ describe('PearlVaultDistributor', function () {
         treasury.deposit(parseEther('1000'), dai.address, parseUnits('750', 9))
       ).to.changeTokenBalance(clam, deployer, parseUnits('250', 9))
 
-      await pearlVaultDistributor.setDistributor(stakingDistributor.address)
-      await stakingDistributor.addRecipient(pearlVaultDistributor.address, 5000)
+      await otterLakeDistributor.setDistributor(stakingDistributor.address)
+      await stakingDistributor.addRecipient(otterLakeDistributor.address, 5000)
 
       expect(
-        await stakingDistributor.nextRewardFor(pearlVaultDistributor.address)
+        await stakingDistributor.nextRewardFor(otterLakeDistributor.address)
       ).to.eq(parseUnits('1.25', 9))
-      await pearlVaultDistributor.setRate(1000000)
+      await otterLakeDistributor.setRate(1000000)
 
-      await expect(() => pearlVaultDistributor.distribute()).changeTokenBalance(
+      await expect(() => otterLakeDistributor.distribute()).changeTokenBalance(
         pearl,
         deployer,
         parseEther('1.25')
       )
-      expect(await clam.balanceOf(pearlVaultDistributor.address)).to.eq(0)
+      expect(await clam.balanceOf(otterLakeDistributor.address)).to.eq(0)
     })
   })
 })

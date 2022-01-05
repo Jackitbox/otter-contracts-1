@@ -3,7 +3,7 @@ const { expect } = require('chai')
 const { BigNumber } = require('@ethersproject/bignumber')
 const { parseUnits, parseEther } = require('ethers/lib/utils')
 
-describe.only('Pearl Vault', function () {
+describe.only('Otter Lake', function () {
   // Large number for approval for DAI
   const largeApproval = '100000000000000000000000000000000'
 
@@ -27,7 +27,7 @@ describe.only('Pearl Vault', function () {
     const DAI = await ethers.getContractFactory('DAI')
     pearl = await DAI.deploy(0)
 
-    const Vault = await ethers.getContractFactory('PearlVault')
+    const Vault = await ethers.getContractFactory('OtterLake')
     vault = await Vault.deploy(
       pearl.address,
       epochLength,
@@ -163,7 +163,7 @@ describe.only('Pearl Vault', function () {
 
       await expect(
         vault.connect(user2).claimReward(term, noteId)
-      ).to.be.revertedWith('PearlVault: msg.sender is not the note owner')
+      ).to.be.revertedWith('OtterLake: msg.sender is not the note owner')
     })
 
     it('should exit with second reward', async function () {
@@ -357,7 +357,7 @@ describe.only('Pearl Vault', function () {
     it('should failed to lock less than min requirement', async function () {
       await expect(
         vault.connect(user1).lock(note2.address, 50)
-      ).to.be.revertedWith('PearlVault: amount < min lock amount')
+      ).to.be.revertedWith('OtterLake: amount < min lock amount')
     })
 
     it('should split rewards to 2 notes', async function () {
@@ -481,7 +481,7 @@ describe.only('Pearl Vault', function () {
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
       await expect(
         vault.connect(user1).extendLock(term, noteId, 50)
-      ).to.be.revertedWith('PearlVault: the note is expired') // 3 -> 4, expired
+      ).to.be.revertedWith('OtterLake: the note is expired') // 3 -> 4, expired
 
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
