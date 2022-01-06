@@ -25,6 +25,8 @@ let addresses = {
     MAI_CLAM: '0x706587BD39322A6a78ddD5491cDbb783F8FD983E',
   },
   CLAM_CIRCULATING_SUPPLY: '0x99ee91871cf39A44E3Fc842541274d7eA05AE4b3',
+  LAKE: '0xAaC7D4A36DAb95955ef3c641c23F1fA46416CF71',
+  LAKE_DISTRIBUTOR: '0x6B5CF024365D5d5d0786673780CA7E3F07f85B63',
 }
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
@@ -68,13 +70,11 @@ const PEARL = await ethers.getContractFactory('OtterPearlERC20')
 let pearl = PEARL.attach(addresses.PEARL_ADDRESS)
 
 const Lake = await ethers.getContractFactory('OtterLake')
-let lake = Lake.attach('0xf4fa0d1c10c47cde9f65d56c3ec977cbeb13449a')
+let lake = Lake.attach(addresses.LAKE)
 
 const OtterLakeDistributor = await ethers.getContractFactory(
   'OtterLakeDistributor'
 )
-let lakeDistributor = OtterLakeDistributor.attach(
-  '0xA343B1FC2897b8C49A72A9A0B2675cB9c7664e8c'
-)
+let lakeDistributor = OtterLakeDistributor.attach(addresses.LAKE_DISTRIBUTOR)
 
 const Note = await ethers.getContractFactory('PearlNote')

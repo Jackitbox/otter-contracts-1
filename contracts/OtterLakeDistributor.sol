@@ -23,6 +23,7 @@ contract OtterLakeDistributor is Ownable, IStakingDistributor {
     IPearlERC20 public pearl;
     IOtterStaking public staking;
     IStakingDistributor public distributor;
+    bool public finalized;
 
     uint256 public immutable epochLength; // seconds
     uint256 public nextEpochTime; // unix epoch time in seconds
@@ -173,4 +174,25 @@ contract OtterLakeDistributor is Ownable, IStakingDistributor {
     function setDistributor(address distributor_) external onlyOwner {
         distributor = IStakingDistributor(distributor_);
     }
+
+    function finalize() external onlyOwner {
+        finalized = true;
+    }
+
+    function recoverERC20(address tokenAddress, uint256 tokenAmount)
+        external
+        onlyOwner
+    {
+        if (finalized) {
+            // @dev if something wrong, dev can extract reward to recover the lose
+            require(
+                tokenAddress != address(clam),
+                'OtterLakeDistributor: Cannot withdraw the clam'
+            );
+        }
+        IERC20(tokenAddress).safeTransfer(owner(), tokenAmount);
+        emit Recovered(tokenAddress, tokenAmount);
+    }
+
+    event Recovered(address token, uint256 amount);
 }

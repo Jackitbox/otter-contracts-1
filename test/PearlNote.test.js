@@ -36,6 +36,14 @@ describe.only('PearlNote', function () {
     await dai.connect(user).approve(mockLake.address, largeApproval)
   })
 
+  describe('token uri', function () {
+    it('should revert to query non-exist token id', async function () {
+      await expect(note.tokenURI(0)).to.be.revertedWith(
+        'PearlNote: URI query for nonexistent token'
+      )
+    })
+  })
+
   describe('mint & burn', function () {
     it('should failed mint for non-lake address', async function () {
       await expect(note.mint(user.address, 100, 10)).to.be.revertedWith(

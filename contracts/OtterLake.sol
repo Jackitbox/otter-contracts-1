@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
-import 'hardhat/console.sol';
+// import 'hardhat/console.sol';
 
 import './interfaces/IERC20.sol';
 import './interfaces/IPearlNote.sol';
@@ -41,6 +41,7 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
 
     IERC20 public immutable pearl;
     IStakingDistributor public distributor;
+    bool public finalized;
 
     uint256 _epoch;
     mapping(uint256 => Epoch) public epochs;
@@ -350,9 +351,19 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
         external
         onlyOwner
     {
-        require(tokenAddress != address(pearl), 'Cannot withdraw the pearl');
+        if (finalized) {
+            // @dev if something wrong, dev can extract reward to recover the lose
+            require(
+                tokenAddress != address(pearl),
+                'OtterLake: Cannot withdraw the pearl'
+            );
+        }
         IERC20(tokenAddress).safeTransfer(owner(), tokenAmount);
         emit Recovered(tokenAddress, tokenAmount);
+    }
+
+    function finalize() external onlyOwner {
+        finalized = true;
     }
 
     function addTerm(

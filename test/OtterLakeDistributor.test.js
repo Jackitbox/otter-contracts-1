@@ -172,4 +172,27 @@ describe('OtterLakeDistributor', function () {
       expect(await clam.balanceOf(otterLakeDistributor.address)).to.eq(0)
     })
   })
+
+  describe('recoverERC20', function () {
+    beforeEach(async function () {
+      await expect(() =>
+        treasury.deposit(parseEther('1000'), dai.address, parseUnits('750', 9))
+      ).to.changeTokenBalance(clam, deployer, parseUnits('250', 9))
+    })
+
+    it('should able to extract CLAM before finalized', async function () {
+      await clam.transfer(otterLakeDistributor.address, 150)
+      await expect(() =>
+        otterLakeDistributor.recoverERC20(clam.address, 150)
+      ).to.changeTokenBalance(clam, deployer, 150)
+    })
+
+    it('should not able to extract pearl after finalized', async function () {
+      await otterLakeDistributor.finalize()
+      await clam.transfer(otterLakeDistributor.address, 150)
+      await expect(
+        otterLakeDistributor.recoverERC20(clam.address, 150)
+      ).to.be.revertedWith('OtterLakeDistributor: Cannot withdraw the clam')
+    })
+  })
 })

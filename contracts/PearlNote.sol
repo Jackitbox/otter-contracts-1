@@ -56,6 +56,7 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         override
         returns (string memory)
     {
+        require(_exists(tokenId), 'PearlNote: URI query for nonexistent token');
         return
             string(
                 abi.encodePacked(

@@ -3,7 +3,7 @@ const { expect } = require('chai')
 const { BigNumber } = require('@ethersproject/bignumber')
 const { parseUnits, parseEther } = require('ethers/lib/utils')
 
-describe.only('Otter Lake', function () {
+describe('Otter Lake', function () {
   // Large number for approval for DAI
   const largeApproval = '100000000000000000000000000000000'
 
@@ -544,6 +544,23 @@ describe.only('Otter Lake', function () {
 
       expect(await vault.totalLocked()).to.eq(0)
       expect(await pearl.balanceOf(vault.address)).to.eq(40)
+    })
+  })
+
+  describe('recoverERC20', function () {
+    it('should able to extract pearl before finalized', async function () {
+      await pearl.transfer(vault.address, 150)
+      await expect(() =>
+        vault.recoverERC20(pearl.address, 150)
+      ).to.changeTokenBalance(pearl, deployer, 150)
+    })
+
+    it('should not able to extract pearl after finalized', async function () {
+      await vault.finalize()
+      await pearl.transfer(vault.address, 150)
+      await expect(vault.recoverERC20(pearl.address, 150)).to.be.revertedWith(
+        'OtterLake: Cannot withdraw the pearl'
+      )
     })
   })
 })
