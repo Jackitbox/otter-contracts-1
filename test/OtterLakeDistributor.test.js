@@ -2,7 +2,7 @@ const { ethers, timeAndMine } = require('hardhat')
 const { expect } = require('chai')
 const { parseEther, parseUnits } = require('ethers/lib/utils')
 
-describe.only('OtterLakeDistributor', function () {
+describe('OtterLakeDistributor', function () {
   // Large number for approval for DAI
   const largeApproval = '100000000000000000000000000000000'
 

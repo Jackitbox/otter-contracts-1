@@ -1,49 +1,100 @@
 const { ethers } = require('hardhat')
 
-const PEARL_ADDRESS = '0x52A7F40BB6e9BD9183071cdBdd3A977D713F2e34'
-const VAULT_ADDRESS = '0xf4fa0d1c10c47cde9f65d56c3ec977cbeb13449a'
-
-const zeroAddress = '0x0000000000000000000000000000000000000000'
-const daoAddr = '0x929a27c46041196e1a49c7b459d63ec9a20cd879'
-const reserveAddr = '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'
+// const PEARL_ADDRESS = '0x52A7F40BB6e9BD9183071cdBdd3A977D713F2e34'
+// const LAKE_ADDRESS = '0xf4fa0d1c10c47cde9f65d56c3ec977cbeb13449a'
+// testnet
+const PEARL_ADDRESS = '0x19907af68A173080c3e05bb53932B0ED541f6d20'
+const LAKE_ADDRESS = '0x252f672EbeCBF8c3952eD79cDf300e293b3F4866'
 
 async function main() {
-  const Staking = await ethers.getContractFactory('OtterStaking')
-  const staking = Staking.attach(POLYGON_MAINNET.STAKING_ADDRESS)
-  const epoch = await staking.epoch()
+  const notes = [
+    {
+      name: 'Safe-Hand 14 Days Note',
+      symbol: 'SAFE14',
+      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      lockPeriod: 14 * 3,
+      multiplier: 100,
+      minAmount: 0,
+    },
+    {
+      name: 'Safe-Hand 28 Days Note',
+      symbol: 'SAFE28',
+      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      lockPeriod: 28 * 3,
+      multiplier: 110,
+      minAmount: 0,
+    },
+    {
+      name: 'Safe-Hand 90 Days Note',
+      symbol: 'SAFE90',
+      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      lockPeriod: 90 * 3,
+      multiplier: 135,
+      minAmount: 0,
+    },
+    {
+      name: 'Safe-Hand 180 Days Note',
+      symbol: 'SAFE180',
+      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      lockPeriod: 180 * 3,
+      multiplier: 200,
+      minAmount: 0,
+    },
+    {
+      name: 'Furry-Hand 28 Days Note',
+      symbol: 'FURRY28',
+      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      lockPeriod: 28 * 3,
+      multiplier: 110,
+      minAmount: 50,
+    },
+    {
+      name: 'Stone-Hand 90 Days Note',
+      symbol: 'STONE90',
+      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      lockPeriod: 90 * 3,
+      multiplier: 135,
+      minAmount: 50,
+    },
+    {
+      name: 'Diamond-Hand 180 Days',
+      symbol: 'DIAMOND180',
+      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      lockPeriod: 180 * 3,
+      multiplier: 200,
+      minAmount: 50,
+    },
+  ]
 
-  console.log('Current epoch: ' + epoch.number.toString())
-  console.log('Epoch length : ' + epoch.length.toString())
-  console.log('Epoch end time : ' + epoch.endTime.toString())
+  const Note = await ethers.getContractFactory('PearlNote')
+  const Lake = await ethers.getContractFactory('OtterLake')
+  const lake = Lake.attach(LAKE_ADDRESS)
 
-  const Vault = await ethers.getContractFactory('OtterLake')
-  const vault = await Vault.deploy(
-    POLYGON_MAINNET.PEARL_ADDRESS,
-    epoch.length,
-    epoch.number,
-    epoch.endTime
-  )
-  await vault.deployTransaction.wait()
-  console.log('Pearl Vault deployed at: ' + vault.address)
+  for (let {
+    name,
+    symbol,
+    baseURI,
+    lockPeriod,
+    multiplier,
+    minAmount,
+  } of notes) {
+    let note = await Note.deploy(
+      name,
+      symbol,
+      baseURI,
+      PEARL_ADDRESS,
+      LAKE_ADDRESS
+    )
+    await note.deployTransaction.wait()
+    await lake.addTerm(
+      note.address,
+      ethers.utils.parseEther(String(minAmount)),
+      lockPeriod,
+      multiplier
+    )
 
-  const OtterLakeDistributor = await ethers.getContractFactory(
-    'OtterLakeDistributor'
-  )
-  const otterLakeDistributor = await OtterLakeDistributor.deploy(
-    POLYGON_MAINNET.PEARL_ADDRESS,
-    POLYGON_MAINNET.CLAM_ADDRESS,
-    POLYGON_MAINNET.sCLAM_ADDRESS,
-    POLYGON_MAINNET.STAKING_ADDRESS,
-    vault.address,
-    epoch.length,
-    epoch.endTime
-  )
-  await otterLakeDistributor.deployTransaction.wait()
-  console.log(
-    'Pearl Vault Distributor deployed at: ' + otterLakeDistributor.address
-  )
-
-  await vault.setDistributor(otterLakeDistributor.address)
+    console.log(`Note ${await note.name()} deployed at: ${note.address}`)
+  }
 
   // await hre.run('verify:verify', {
   //   address: bond.address,

@@ -45,15 +45,15 @@ async function main() {
   console.log('Epoch length : ' + epoch.length.toString())
   console.log('Epoch end time : ' + epoch.endTime.toString())
 
-  const Vault = await ethers.getContractFactory('OtterLake')
-  const vault = await Vault.deploy(
+  const Lake = await ethers.getContractFactory('OtterLake')
+  const lake = await Lake.deploy(
     POLYGON_MAINNET.PEARL_ADDRESS,
     epoch.length,
     epoch.number,
     epoch.endTime
   )
-  await vault.deployTransaction.wait()
-  console.log('Pearl Vault deployed at: ' + vault.address)
+  await lake.deployTransaction.wait()
+  console.log('Pearl Lake deployed at: ' + lake.address)
 
   const OtterLakeDistributor = await ethers.getContractFactory(
     'OtterLakeDistributor'
@@ -63,16 +63,16 @@ async function main() {
     POLYGON_MAINNET.CLAM_ADDRESS,
     POLYGON_MAINNET.sCLAM_ADDRESS,
     POLYGON_MAINNET.STAKING_ADDRESS,
-    vault.address,
+    lake.address,
     epoch.length,
     epoch.endTime
   )
   await otterLakeDistributor.deployTransaction.wait()
   console.log(
-    'Pearl Vault Distributor deployed at: ' + otterLakeDistributor.address
+    'Pearl Lake Distributor deployed at: ' + otterLakeDistributor.address
   )
 
-  await vault.setDistributor(otterLakeDistributor.address)
+  await lake.setDistributor(otterLakeDistributor.address)
 
   // await hre.run('verify:verify', {
   //   address: bond.address,
