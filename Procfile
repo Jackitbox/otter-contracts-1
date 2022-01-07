@@ -1,1 +1,1 @@
-web: yarn hardhat node
+web: yarn hardhat node --hostname 0.0.0.0
