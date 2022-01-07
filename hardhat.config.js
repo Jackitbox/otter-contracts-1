@@ -33,12 +33,12 @@ module.exports = {
   networks: {
     'polygon-mainnet': {
       url: 'https://polygon-rpc.com',
-      accounts: [deployer],
-      gasPrice: 35000000000,
+      accounts: deployer ? [deployer] : deployer,
+      gasPrice: ethers.utils.parseUnits('35', 'gwei').toNumber(),
     },
     'polygon-mumbai': {
       url: polygonMumbaiRPC,
-      accounts: [dev],
+      accounts: dev ? [dev] : dev,
       gas: 'auto',
       gasPrice: ethers.utils.parseUnits('1.2', 'gwei').toNumber(),
     },
@@ -47,9 +47,7 @@ module.exports = {
       forking:
         process.env.NODE_ENV === 'test'
           ? undefined
-          : {
-              url: polygonMainnetRPC,
-            },
+          : { url: polygonMainnetRPC },
     },
   },
   etherscan: {
