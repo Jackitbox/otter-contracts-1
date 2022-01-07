@@ -464,6 +464,37 @@ describe.only('Otter Lake', function () {
       expect(await pearl.balanceOf(vault.address)).to.eq(0)
     })
 
+    it('should claim and extend', async function () {
+      const term = note.address
+      await pearl.transfer(mockDistributor.address, 10)
+
+      await expect(() =>
+        vault.connect(user1).lock(term, 100)
+      ).to.changeTokenBalance(pearl, user1, -100)
+
+      expect(await note.balanceOf(user1.address)).to.eq(1)
+
+      await pearl.transfer(mockDistributor.address, 33)
+      await advanceEpoch(1)
+
+      const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
+      await expect(() =>
+        vault.connect(user1).claimAndLock(term, noteId)
+      ).to.changeTokenBalance(pearl, user1, 0)
+
+      await advanceEpoch(2)
+
+      await expect(() =>
+        vault.connect(user1).claimReward(term, noteId)
+      ).to.changeTokenBalance(pearl, user1, 33)
+
+      await expect(() =>
+        vault.connect(user1).exit(term, noteId)
+      ).to.changeTokenBalance(pearl, user1, 110)
+
+      expect(await pearl.balanceOf(vault.address)).to.eq(0)
+    })
+
     it('failed to extend an expired note ', async function () {
       const term = note.address
       const reward = 10

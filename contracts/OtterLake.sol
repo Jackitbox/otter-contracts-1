@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
-// import 'hardhat/console.sol';
+import 'hardhat/console.sol';
 
 import './interfaces/IERC20.sol';
 import './interfaces/IPearlNote.sol';
@@ -213,7 +213,7 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
         address noteAddr,
         uint256 tokenId,
         uint256 amount
-    ) external {
+    ) public nonReentrant notPaused {
         harvest();
 
         Term memory term = terms[noteAddr];
@@ -252,6 +252,12 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
         emit Locked(msg.sender, noteAddr, tokenId, amount);
     }
 
+    function claimAndLock(address noteAddr, uint256 tokenId) external {
+        uint256 extendingReward = claimReward(noteAddr, tokenId);
+        console.log('claim and lock: %s', extendingReward);
+        extendLock(noteAddr, tokenId, extendingReward);
+    }
+
     function redeem(address noteAddr, uint256 tokenId) public nonReentrant {
         harvest();
 
@@ -268,6 +274,7 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
     function claimReward(address noteAddr, uint256 tokenId)
         public
         nonReentrant
+        returns (uint256)
     {
         harvest();
 
@@ -284,7 +291,9 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
             // rewardPerBoostPointPaid[termIndex][tokenId] = epochs[_epoch]
             // .rewardPerBoostPoint;
             emit RewardPaid(msg.sender, noteAddr, tokenId, claimableReward);
+            return claimableReward;
         }
+        return 0;
     }
 
     function exit(address note, uint256 tokenId) external {
