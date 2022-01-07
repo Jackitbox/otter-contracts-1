@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity >=0.7.5;
 
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import '@openzeppelin/contracts/token/ERC721/IERC721Enumerable.sol';
 
-interface IPearlNote is IERC721 {
+interface IPearlNote is IERC721Enumerable {
     function lockAmount(uint256 tokenId) external view returns (uint256);
 
     function endEpoch(uint256 tokenId) external view returns (uint256);

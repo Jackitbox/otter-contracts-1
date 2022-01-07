@@ -103,6 +103,28 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
         return termAddresses.length;
     }
 
+    function totalBoostPoint(address owner)
+        external
+        view
+        returns (uint256 sum)
+    {
+        for (uint256 i = 0; i < termAddresses.length; i++) {
+            IPearlNote note = terms[termAddresses[i]].note;
+            uint256 balance = note.balanceOf(owner);
+            for (uint256 j = 0; j < balance; j++) {
+                uint256 tokenId = note.tokenOfOwnerByIndex(owner, j);
+                if (note.endEpoch(tokenId) > _epoch) {
+                    sum = sum.add(
+                        boostPointOf(
+                            address(note),
+                            note.tokenOfOwnerByIndex(owner, j)
+                        )
+                    );
+                }
+            }
+        }
+    }
+
     function boostPointOf(address noteAddr, uint256 tokenId)
         public
         view

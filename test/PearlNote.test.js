@@ -2,7 +2,7 @@ const { ethers } = require('hardhat')
 const { expect } = require('chai')
 const { parseEther } = require('ethers/lib/utils')
 
-describe.only('PearlNote', function () {
+describe('PearlNote', function () {
   // Large number for approval for DAI
   const largeApproval = '100000000000000000000000000000000'
 

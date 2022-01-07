@@ -3,7 +3,7 @@ const { expect } = require('chai')
 const { BigNumber } = require('@ethersproject/bignumber')
 const { parseUnits, parseEther } = require('ethers/lib/utils')
 
-describe('Otter Lake', function () {
+describe.only('Otter Lake', function () {
   // Large number for approval for DAI
   const largeApproval = '100000000000000000000000000000000'
 
@@ -50,7 +50,7 @@ describe('Otter Lake', function () {
     await pearl.connect(user2).approve(vault.address, largeApproval)
   })
 
-  async function nextEpoch(epoch = 1, harvest = true) {
+  async function advanceEpoch(epoch = 1, harvest = true) {
     for (let i = 0; i < epoch; i++) {
       await timeAndMine.setTimeNextBlock((now += 100))
       if (harvest) {
@@ -133,7 +133,7 @@ describe('Otter Lake', function () {
 
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
 
-      await nextEpoch(2, false)
+      await advanceEpoch(2, false)
 
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
@@ -159,7 +159,7 @@ describe('Otter Lake', function () {
 
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
 
-      await nextEpoch(2)
+      await advanceEpoch(2)
 
       await expect(
         vault.connect(user2).claimReward(term, noteId)
@@ -179,7 +179,7 @@ describe('Otter Lake', function () {
       expect(await note.balanceOf(user1.address)).to.eq(1)
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
 
-      await nextEpoch(2, false)
+      await advanceEpoch(2, false)
 
       await pearl.transfer(mockDistributor.address, 20)
 
@@ -208,7 +208,7 @@ describe('Otter Lake', function () {
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
 
       await pearl.transfer(mockDistributor.address, 20)
-      await nextEpoch(2)
+      await advanceEpoch(2)
 
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
@@ -244,7 +244,7 @@ describe('Otter Lake', function () {
       expect(await note2.balanceOf(user1.address)).to.eq(1)
       const noteId = await note2.tokenOfOwnerByIndex(user1.address, 0)
 
-      await nextEpoch(3, false)
+      await advanceEpoch(3, false)
 
       await pearl.transfer(mockDistributor.address, 20)
       await expect(() =>
@@ -270,7 +270,7 @@ describe('Otter Lake', function () {
         vault.connect(user1).lock(term, 100)
       ).to.changeTokenBalance(pearl, user1, -100)
 
-      await nextEpoch(1, false)
+      await advanceEpoch(1, false)
 
       expect(await note.balanceOf(user1.address)).to.eq(1)
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
@@ -294,7 +294,7 @@ describe('Otter Lake', function () {
       await vault.connect(user1).lock(term, 100)
       await vault.connect(user2).lock(term, 300)
 
-      await nextEpoch(2)
+      await advanceEpoch(2)
 
       const user1Note = await note.tokenOfOwnerByIndex(user1.address, 0)
       await expect(() =>
@@ -374,7 +374,7 @@ describe('Otter Lake', function () {
       const user2Note = await note2.tokenOfOwnerByIndex(user2.address, 0)
       expect(await note2.endEpoch(user2Note)).to.eq(5)
 
-      await nextEpoch(3)
+      await advanceEpoch(3)
 
       await expect(() =>
         vault.connect(user1).exit(note1.address, user1Note)
@@ -397,11 +397,11 @@ describe('Otter Lake', function () {
       await vault.connect(user2).lock(note2.address, 100)
       const user2Note = await note2.tokenOfOwnerByIndex(user2.address, 0)
 
-      await nextEpoch()
+      await advanceEpoch()
 
       reward = 200
       await pearl.transfer(mockDistributor.address, reward)
-      await nextEpoch(3)
+      await advanceEpoch(3)
 
       await expect(() =>
         vault.connect(user1).exit(note1.address, user1Note)
@@ -442,8 +442,7 @@ describe('Otter Lake', function () {
 
       expect(await note.balanceOf(user1.address)).to.eq(1)
 
-      now += 100
-      await timeAndMine.setTimeNextBlock(now)
+      await timeAndMine.setTimeNextBlock((now += 100))
 
       await pearl.transfer(mockDistributor.address, 30)
 
@@ -452,7 +451,7 @@ describe('Otter Lake', function () {
         vault.connect(user1).extendLock(term, noteId, 50)
       ).to.changeTokenBalance(pearl, user1, -50)
 
-      await nextEpoch(2)
+      await advanceEpoch(2)
 
       await expect(() =>
         vault.connect(user1).claimReward(term, noteId)
@@ -476,7 +475,7 @@ describe('Otter Lake', function () {
 
       expect(await note.balanceOf(user1.address)).to.eq(1)
 
-      await nextEpoch(5)
+      await advanceEpoch(5)
 
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
       await expect(
@@ -505,7 +504,7 @@ describe('Otter Lake', function () {
       const user1Note = await note.tokenOfOwnerByIndex(user1.address, 0)
 
       await pearl.transfer(mockDistributor.address, 100)
-      await nextEpoch(1, false)
+      await advanceEpoch(1, false)
       await vault.connect(user2).lock(term, 300) // 2 -> 3, lock at 3
 
       await expect(() =>
@@ -513,7 +512,7 @@ describe('Otter Lake', function () {
       ).to.changeTokenBalance(pearl, user1, -100)
 
       await pearl.transfer(mockDistributor.address, 20)
-      await nextEpoch() // 3 -> 4
+      await advanceEpoch() // 3 -> 4
       expect(await vault.reward(term, user1Note)).to.eq(60)
 
       await expect(() =>
@@ -525,9 +524,9 @@ describe('Otter Lake', function () {
       ).to.be.revertedWith('PearlNote: the note is not expired')
 
       await pearl.transfer(mockDistributor.address, 20)
-      await nextEpoch()
+      await advanceEpoch()
       await pearl.transfer(mockDistributor.address, 20)
-      await nextEpoch()
+      await advanceEpoch()
 
       expect(await vault.reward(term, user1Note)).to.eq(8)
 
@@ -561,6 +560,54 @@ describe('Otter Lake', function () {
       await expect(vault.recoverERC20(pearl.address, 150)).to.be.revertedWith(
         'OtterLake: Cannot withdraw the pearl'
       )
+    })
+  })
+
+  describe('boost point', function () {
+    let note1, note2
+
+    beforeEach(async function () {
+      const Note = await ethers.getContractFactory('PearlNote')
+      note1 = await Note.deploy(
+        'Note',
+        'NOTE',
+        'https://example.com/safe',
+        pearl.address,
+        vault.address
+      )
+      await vault.addTerm(note1.address, 0, 3, 100)
+
+      note2 = await Note.deploy(
+        'Note2',
+        'NOTE2',
+        'https://example.com/diamond',
+        pearl.address,
+        vault.address
+      )
+      await vault.addTerm(note2.address, 0, 9, 200)
+    })
+
+    it('should get boost point', async function () {
+      await expect(() =>
+        vault.connect(user1).lock(note1.address, 100)
+      ).to.changeTokenBalance(pearl, user1, -100)
+
+      expect(await vault.totalBoostPoint(user1.address)).to.eq(100)
+
+      await expect(() =>
+        vault.connect(user1).lock(note2.address, 200)
+      ).to.changeTokenBalance(pearl, user1, -200)
+
+      expect(await vault.totalBoostPoint(user1.address)).to.eq(500)
+
+      await advanceEpoch(5)
+
+      expect(await vault.totalBoostPoint(user1.address)).to.eq(400)
+
+      const user1Note = await note1.tokenOfOwnerByIndex(user1.address, 0)
+      await vault.connect(user1).redeem(note1.address, user1Note)
+
+      expect(await vault.totalBoostPoint(user1.address)).to.eq(400)
     })
   })
 })
