@@ -9,6 +9,7 @@ const deployer = process.env.DEPLOYER_PRIVATE_KEY
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY
 const polygonMainnetRPC = process.env.POLYGON_MAINNET_RPC
 const polygonMumbaiRPC = process.env.POLYGON_MUMBAI_RPC
+const chainId = Number(process.env.FORK_CHAIN_ID) || 31337
 
 module.exports = {
   solidity: {
@@ -48,6 +49,7 @@ module.exports = {
       gas: 'auto',
     },
     hardhat: {
+      chainId,
       gas: 'auto',
       forking:
         process.env.NODE_ENV === 'test'
