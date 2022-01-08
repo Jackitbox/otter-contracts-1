@@ -7,8 +7,12 @@ const { ethers } = require('ethers')
 const dev = process.env.DEV_PRIVATE_KEY
 const deployer = process.env.DEPLOYER_PRIVATE_KEY
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY
-const polygonMainnetRPC = process.env.POLYGON_MAINNET_RPC
-const polygonMumbaiRPC = process.env.POLYGON_MUMBAI_RPC
+const polygonMainnetRPC =
+  process.env.POLYGON_MAINNET_RPC ||
+  'https://polygon-mainnet.infura.io/v3/0cdd6576febe4961a2b97b9ee9051e5d'
+const polygonMumbaiRPC =
+  process.env.POLYGON_MUMBAI_RPC ||
+  'https://polygon-mumbai.infura.io/v3/0cdd6576febe4961a2b97b9ee9051e5d'
 const chainId = Number(process.env.FORK_CHAIN_ID) || 31337
 
 module.exports = {
@@ -45,7 +49,7 @@ module.exports = {
     },
     'otterclam-fork': {
       url: 'https://https://fork-rpc.otterclam.finance',
-      accounts: [deployer],
+      accounts: deployer ? [deployer] : deployer,
       gas: 'auto',
     },
     hardhat: {
