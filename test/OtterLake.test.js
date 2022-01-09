@@ -1,7 +1,6 @@
 const { ethers, timeAndMine } = require('hardhat')
 const { expect } = require('chai')
-const { BigNumber } = require('@ethersproject/bignumber')
-const { parseUnits, parseEther } = require('ethers/lib/utils')
+const { parseEther } = require('ethers/lib/utils')
 
 describe.only('Otter Lake', function () {
   // Large number for approval for DAI
@@ -14,7 +13,6 @@ describe.only('Otter Lake', function () {
   const epochLength = 100
 
   // Ethereum 0 address, used when toggling changes in treasury
-  const zeroAddress = '0x0000000000000000000000000000000000000000'
 
   let deployer, vault, mockDistributor, pearl, user1, user2, now
 
@@ -316,10 +314,10 @@ describe.only('Otter Lake', function () {
     let note1,
       note2,
       note1MinAmount = 1,
-      note1MinLockPeriod = 2,
+      note1LockPeriod = 2,
       note1Multiplier = 100,
       note2MinAmount = 100,
-      note2MinLockPeriod = 3,
+      note2LockPeriod = 3,
       note2Multiplier = 200
 
     beforeEach(async function () {
@@ -335,7 +333,7 @@ describe.only('Otter Lake', function () {
       await vault.addTerm(
         note1.address,
         note1MinAmount,
-        note1MinLockPeriod,
+        note1LockPeriod,
         note1Multiplier
       )
 
@@ -349,7 +347,7 @@ describe.only('Otter Lake', function () {
       await vault.addTerm(
         note2.address,
         note2MinAmount,
-        note2MinLockPeriod,
+        note2LockPeriod,
         note2Multiplier
       )
     })
@@ -451,6 +449,10 @@ describe.only('Otter Lake', function () {
         vault.connect(user1).extendLock(term, noteId, 50)
       ).to.changeTokenBalance(pearl, user1, -50)
 
+      await expect(vault.connect(user1).exit(term, noteId)).to.be.revertedWith(
+        'PearlNote: the note is not expired'
+      )
+
       await advanceEpoch(2)
 
       await expect(() =>
@@ -506,7 +508,7 @@ describe.only('Otter Lake', function () {
 
       expect(await note.balanceOf(user1.address)).to.eq(1)
 
-      await advanceEpoch(5)
+      await advanceEpoch(4)
 
       const noteId = await note.tokenOfOwnerByIndex(user1.address, 0)
       await expect(

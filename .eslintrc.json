@@ -8,6 +8,7 @@
     "ecmaVersion": 12
   },
   "rules": {
-    "no-unused-vars": ["error", { "varsIgnorePattern": "^_" }]
+    "no-unused-vars": ["error", { "varsIgnorePattern": "^_" }],
+    "mocha/no-setup-in-describe" : "off"
   }
 }
