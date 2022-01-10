@@ -48,8 +48,7 @@ module.exports = {
       gasPrice: ethers.utils.parseUnits('1.2', 'gwei').toNumber(),
     },
     'otterclam-fork': {
-      url: 'https://https://fork-rpc.otterclam.finance',
-      accounts: deployer ? [deployer] : deployer,
+      url: 'https://fork-rpc.otterclam.finance',
       gas: 'auto',
     },
     hardhat: {
