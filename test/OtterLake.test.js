@@ -1,6 +1,7 @@
 const { ethers, timeAndMine } = require('hardhat')
 const { expect } = require('chai')
 const { parseEther } = require('ethers/lib/utils')
+const { BigNumber } = require('@ethersproject/bignumber')
 
 describe.only('Otter Lake', function () {
   // Large number for approval for DAI
@@ -14,10 +15,10 @@ describe.only('Otter Lake', function () {
 
   // Ethereum 0 address, used when toggling changes in treasury
 
-  let deployer, vault, mockDistributor, pearl, user1, user2, now
+  let deployer, vault, mockDistributor, pearl, user1, user2, user3, now
 
   beforeEach(async function () {
-    ;[deployer, user1, user2] = await ethers.getSigners()
+    ;[deployer, user1, user2, user3] = await ethers.getSigners()
 
     now = now || Math.floor(Date.now() / 1000)
     const firstEpochEndTime = now - 10
@@ -42,10 +43,12 @@ describe.only('Otter Lake', function () {
     await pearl.mint(deployer.address, parseEther(String(100 * 10000)))
     await pearl.transfer(user1.address, parseEther(String(1000)))
     await pearl.transfer(user2.address, parseEther(String(100)))
+    await pearl.transfer(user3.address, parseEther(String(100)))
 
     // approve
     await pearl.connect(user1).approve(vault.address, largeApproval)
     await pearl.connect(user2).approve(vault.address, largeApproval)
+    await pearl.connect(user3).approve(vault.address, largeApproval)
   })
 
   async function advanceEpoch(epoch = 1, harvest = true) {
@@ -307,6 +310,112 @@ describe.only('Otter Lake', function () {
         vault.connect(user2).exit(term, user2Note)
       ).to.changeTokenBalance(pearl, user2, 315)
       expect(await vault.totalLocked()).to.eq(0)
+    })
+  })
+
+  describe('should share all reward base on boost point', function () {
+    it('divide equally', async function () {
+      const totalReward = 40
+      const lockInfos = [
+        { user: user1, amount: 100, multiplier: 100 },
+        { user: user2, amount: 100, multiplier: 200 },
+        { user: user3, amount: 100, multiplier: 100 },
+      ]
+      const Note = await ethers.getContractFactory('PearlNote')
+      const lockPeriod = 1
+      const totalBoostPoint = lockInfos.reduce(
+        (acc, { multiplier }) => acc + multiplier,
+        0
+      )
+
+      await pearl.transfer(mockDistributor.address, totalReward)
+      const locked = await Promise.all(
+        lockInfos.map(async (e) => {
+          const note = await Note.deploy(
+            'Note',
+            'NOTE',
+            'https://example.com/diamond',
+            pearl.address,
+            vault.address
+          )
+          await vault.addTerm(note.address, e.amount, lockPeriod, e.multiplier)
+          await vault.connect(e.user).lock(note.address, e.amount)
+          const noteId = await note.tokenOfOwnerByIndex(e.user.address, 0)
+          const reward = (totalReward * e.multiplier) / totalBoostPoint
+
+          return { ...e, note, noteId, reward }
+        })
+      )
+
+      await advanceEpoch(2)
+      await Promise.all(
+        locked.map(async (e) =>
+          expect(() =>
+            vault.connect(e.user).exit(e.note.address, e.noteId)
+          ).to.changeTokenBalance(pearl, e.user, e.amount + e.reward)
+        )
+      )
+    })
+    it('not divisible', async function () {
+      const totalReward = parseEther('30')
+      const lockInfos = [
+        { user: user1, amount: parseEther('88'), multiplier: 100 },
+        { user: user2, amount: parseEther('93'), multiplier: 200 },
+        { user: user3, amount: parseEther('24'), multiplier: 100 },
+      ]
+      const Note = await ethers.getContractFactory('PearlNote')
+      const lockPeriod = 1
+      const totalBoostPoint = lockInfos.reduce(
+        (acc, { amount, multiplier }) =>
+          acc.add(amount.mul(multiplier).div(100)),
+        BigNumber.from(0)
+      )
+
+      await pearl.transfer(mockDistributor.address, totalReward)
+      const locked = await Promise.all(
+        lockInfos.map(async (e) => {
+          const note = await Note.deploy(
+            'Note',
+            'NOTE',
+            'https://example.com/diamond',
+            pearl.address,
+            vault.address
+          )
+          await vault.addTerm(note.address, e.amount, lockPeriod, e.multiplier)
+          await vault.connect(e.user).lock(note.address, e.amount)
+          const noteId = await note.tokenOfOwnerByIndex(e.user.address, 0)
+
+          const rewardPerBoostPoint = totalReward
+            .mul(e.multiplier)
+            .mul(parseEther('1'))
+            .div(totalBoostPoint)
+            .div(100)
+          const reward = rewardPerBoostPoint.mul(e.amount).div(parseEther('1'))
+
+          // console.log(`->boostPoint: ${e.amount.mul(e.multiplier).div(100)}`)
+          // console.log(`->reward: ${reward.toString()}`)
+          // console.log(`->totalBoostPoint: ${totalBoostPoint.toString()}`)
+          // console.log(
+          //   `->rewardPerBoostPoint: ${rewardPerBoostPoint.toString()}`
+          // )
+          // console.log(
+          //   `->rewardPerBoostPoint x amount: ${rewardPerBoostPoint
+          //     .mul(e.amount)
+          //     .div(parseEther('1'))}`
+          // )
+
+          return { ...e, note, noteId, reward }
+        })
+      )
+
+      await advanceEpoch(2)
+      await Promise.all(
+        locked.map(async (e) =>
+          expect(() =>
+            vault.connect(e.user).exit(e.note.address, e.noteId)
+          ).to.changeTokenBalance(pearl, e.user, e.amount.add(e.reward))
+        )
+      )
     })
   })
 
