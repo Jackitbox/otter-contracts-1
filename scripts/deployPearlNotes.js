@@ -1,65 +1,68 @@
 const { ethers } = require('hardhat')
 
-const PEARL_ADDRESS = '0x52A7F40BB6e9BD9183071cdBdd3A977D713F2e34'
-const LAKE_ADDRESS = '0xAaC7D4A36DAb95955ef3c641c23F1fA46416CF71'
+// mainnet
+// const PEARL_ADDRESS = '0x52A7F40BB6e9BD9183071cdBdd3A977D713F2e34'
+// const LAKE_ADDRESS = '0x0001760F6C44225fbCA1375c885388d1201C191A'
+// const BASE_URI = 'https://api.otterclam.finance/pearl_notes/metadata/'
 // testnet
-//const PEARL_ADDRESS = '0x19907af68A173080c3e05bb53932B0ED541f6d20'
-//const LAKE_ADDRESS = '0x252f672EbeCBF8c3952eD79cDf300e293b3F4866'
+const PEARL_ADDRESS = '0x52A7F40BB6e9BD9183071cdBdd3A977D713F2e34'
+const LAKE_ADDRESS = '0x2fe19128A8257182fdD77f90eA96D27cA342897A'
+const BASE_URI = 'https://otter-api-pr-11.herokuapp.com/pearl_notes/metadata/'
 
 async function main() {
   const notes = [
     {
-      name: 'Safe-Hand 14 Days Note',
+      name: 'Safe-Hand 14-Day Note',
       symbol: 'SAFE14',
-      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      baseURI: BASE_URI,
       lockPeriod: 14 * 3,
       multiplier: 100,
       minAmount: 0,
     },
     {
-      name: 'Safe-Hand 28 Days Note',
+      name: 'Safe-Hand 28-Day Note',
       symbol: 'SAFE28',
-      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      baseURI: BASE_URI,
       lockPeriod: 28 * 3,
       multiplier: 110,
       minAmount: 0,
     },
     {
-      name: 'Safe-Hand 90 Days Note',
+      name: 'Safe-Hand 90-Day Note',
       symbol: 'SAFE90',
-      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      baseURI: BASE_URI,
       lockPeriod: 90 * 3,
       multiplier: 135,
       minAmount: 0,
     },
     {
-      name: 'Safe-Hand 180 Days Note',
+      name: 'Safe-Hand 180-Day Note',
       symbol: 'SAFE180',
-      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      baseURI: BASE_URI,
       lockPeriod: 180 * 3,
       multiplier: 200,
       minAmount: 0,
     },
     {
-      name: 'Furry-Hand 28 Days Note',
+      name: 'Furry-Hand 28-Day Note',
       symbol: 'FURRY28',
-      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      baseURI: BASE_URI,
       lockPeriod: 28 * 3,
       multiplier: 110,
       minAmount: 50,
     },
     {
-      name: 'Stone-Hand 90 Days Note',
+      name: 'Stone-Hand 90-Day Note',
       symbol: 'STONE90',
-      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      baseURI: BASE_URI,
       lockPeriod: 90 * 3,
       multiplier: 135,
       minAmount: 50,
     },
     {
-      name: 'Diamond-Hand 180 Days',
+      name: 'Diamond-Hand 180-Day Note',
       symbol: 'DIAMOND180',
-      baseURI: 'https://api.otterclam.finance/pearl_notes/metadata/',
+      baseURI: BASE_URI,
       lockPeriod: 180 * 3,
       multiplier: 200,
       minAmount: 50,

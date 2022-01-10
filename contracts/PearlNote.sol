@@ -90,6 +90,10 @@ contract PearlNote is IPearlNote, ERC721, Ownable {
         paw = IOtterPAWMintable(paw_);
     }
 
+    function setBaseURI(string memory uri_) external onlyOwner {
+        _setBaseURI(uri_);
+    }
+
     function mint(
         address _user,
         uint256 _amount,

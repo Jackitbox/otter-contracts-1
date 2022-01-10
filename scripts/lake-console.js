@@ -25,8 +25,8 @@ let addresses = {
     MAI_CLAM: '0x706587BD39322A6a78ddD5491cDbb783F8FD983E',
   },
   CLAM_CIRCULATING_SUPPLY: '0x99ee91871cf39A44E3Fc842541274d7eA05AE4b3',
-  LAKE: '0xAaC7D4A36DAb95955ef3c641c23F1fA46416CF71',
-  LAKE_DISTRIBUTOR: '0x6B5CF024365D5d5d0786673780CA7E3F07f85B63',
+  LAKE: '0x0001760F6C44225fbCA1375c885388d1201C191A',
+  LAKE_DISTRIBUTOR: '0x96829C6DBc28C9345b100457FE51fb6e83ab46DB',
 }
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
@@ -72,9 +72,27 @@ let pearl = PEARL.attach(addresses.PEARL_ADDRESS)
 const Lake = await ethers.getContractFactory('OtterLake')
 let lake = Lake.attach(addresses.LAKE)
 
+const Staking = await ethers.getContractFactory('OtterStaking')
+let staking = Staking.attach(addresses.STAKING_ADDRESS)
+
 const OtterLakeDistributor = await ethers.getContractFactory(
   'OtterLakeDistributor'
 )
 let lakeDistributor = OtterLakeDistributor.attach(addresses.LAKE_DISTRIBUTOR)
 
 const Note = await ethers.getContractFactory('PearlNote')
+
+let days = 14
+await hre.network.provider.request({
+  method: 'evm_increaseTime',
+  params: [14 * 86400],
+})
+for (var i = 0; i < 14 * 3; i++) {
+  await Promise.all([lake.harvest(), staking.rebase()])
+  console.log(i)
+}
+
+// for (var i = 0; i < 14 * 3; i++) {
+//   await staking.rebase();
+//   console.log(i)
+// }

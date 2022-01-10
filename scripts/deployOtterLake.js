@@ -42,13 +42,13 @@ async function main() {
   const epoch = await staking.epoch()
 
   console.log('Current epoch: ' + epoch.number.toString())
-  console.log('Epoch length : ' + epoch.length.toString())
+  console.log('Epoch length : ' + epoch._length.toString())
   console.log('Epoch end time : ' + epoch.endTime.toString())
 
   const Lake = await ethers.getContractFactory('OtterLake')
   const lake = await Lake.deploy(
     POLYGON_MAINNET.PEARL_ADDRESS,
-    epoch.length,
+    epoch._length,
     epoch.number,
     epoch.endTime
   )
@@ -64,7 +64,7 @@ async function main() {
     POLYGON_MAINNET.sCLAM_ADDRESS,
     POLYGON_MAINNET.STAKING_ADDRESS,
     lake.address,
-    epoch.length,
+    epoch._length,
     epoch.endTime
   )
   await otterLakeDistributor.deployTransaction.wait()

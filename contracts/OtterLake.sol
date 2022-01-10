@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
-import 'hardhat/console.sol';
+// import 'hardhat/console.sol';
 
 import './interfaces/IERC20.sol';
 import './interfaces/IPearlNote.sol';
@@ -254,7 +254,7 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
 
     function claimAndLock(address noteAddr, uint256 tokenId) external {
         uint256 extendingReward = claimReward(noteAddr, tokenId);
-        console.log('claim and lock: %s', extendingReward);
+        // console.log('claim and lock: %s', extendingReward);
         extendLock(noteAddr, tokenId, extendingReward);
     }
 
@@ -288,8 +288,6 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
             // console.log('reward: %s', claimableReward);
             rewards[noteAddr][tokenId] = 0;
             pearl.transfer(msg.sender, claimableReward);
-            // rewardPerBoostPointPaid[termIndex][tokenId] = epochs[_epoch]
-            // .rewardPerBoostPoint;
             emit RewardPaid(msg.sender, noteAddr, tokenId, claimableReward);
             return claimableReward;
         }
@@ -474,6 +472,5 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
         uint256 indexed tokenId,
         uint256 reward
     );
-    event RewardsDurationUpdated(uint256 newDuration);
     event Recovered(address token, uint256 amount);
 }
