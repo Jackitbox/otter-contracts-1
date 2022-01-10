@@ -41,51 +41,51 @@ async function main() {
   const staking = Staking.attach(POLYGON_MAINNET.STAKING_ADDRESS)
   const epoch = await staking.epoch()
 
-  console.log('Current epoch: ' + epoch.number.toString())
-  console.log('Epoch length : ' + epoch._length.toString())
-  console.log('Epoch end time : ' + epoch.endTime.toString())
+  // console.log('Current epoch: ' + epoch.number.toString())
+  // console.log('Epoch length : ' + epoch._length.toString())
+  // console.log('Epoch end time : ' + epoch.endTime.toString())
 
-  const Lake = await ethers.getContractFactory('OtterLake')
-  const lake = await Lake.deploy(
-    POLYGON_MAINNET.PEARL_ADDRESS,
-    epoch._length,
-    epoch.number,
-    epoch.endTime
-  )
-  await lake.deployTransaction.wait()
-  console.log('Pearl Lake deployed at: ' + lake.address)
+  // const Lake = await ethers.getContractFactory('OtterLake')
+  // const lake = await Lake.deploy(
+  //   POLYGON_MAINNET.PEARL_ADDRESS,
+  //   epoch._length,
+  //   epoch.number,
+  //   epoch.endTime
+  // )
+  // await lake.deployTransaction.wait()
+  // console.log('Pearl Lake deployed at: ' + lake.address)
 
-  const OtterLakeDistributor = await ethers.getContractFactory(
-    'OtterLakeDistributor'
-  )
-  const otterLakeDistributor = await OtterLakeDistributor.deploy(
-    POLYGON_MAINNET.PEARL_ADDRESS,
-    POLYGON_MAINNET.CLAM_ADDRESS,
-    POLYGON_MAINNET.sCLAM_ADDRESS,
-    POLYGON_MAINNET.STAKING_ADDRESS,
-    lake.address,
-    epoch._length,
-    epoch.endTime
-  )
-  await otterLakeDistributor.deployTransaction.wait()
-  console.log(
-    'Pearl Lake Distributor deployed at: ' + otterLakeDistributor.address
-  )
+  // const OtterLakeDistributor = await ethers.getContractFactory(
+  //   'OtterLakeDistributor'
+  // )
+  // const otterLakeDistributor = await OtterLakeDistributor.deploy(
+  //   POLYGON_MAINNET.PEARL_ADDRESS,
+  //   POLYGON_MAINNET.CLAM_ADDRESS,
+  //   POLYGON_MAINNET.sCLAM_ADDRESS,
+  //   POLYGON_MAINNET.STAKING_ADDRESS,
+  //   lake.address,
+  //   epoch._length,
+  //   epoch.endTime
+  // )
+  // await otterLakeDistributor.deployTransaction.wait()
+  // console.log(
+  //   'Pearl Lake Distributor deployed at: ' + otterLakeDistributor.address
+  // )
 
-  await lake.setDistributor(otterLakeDistributor.address)
+  // await lake.setDistributor(otterLakeDistributor.address)
 
-  // await hre.run('verify:verify', {
-  //   address: bond.address,
-  //   constructorArguments: [
-  //     addresses.CLAM_ADDRESS,
-  //     addresses.sCLAM_ADDRESS,
-  //     reserveAddr,
-  //     addresses.TREASURY_ADDRESS,
-  //     daoAddr,
-  //     addresses.STAKING_ADDRESS,
-  //     oracleAddr,
-  //   ],
-  // })
+  await hre.run('verify:verify', {
+    address: '0xeb8E5A2605a687B791f7D7034E15F96AF1114e09',
+    constructorArguments: [
+      POLYGON_MAINNET.PEARL_ADDRESS,
+      POLYGON_MAINNET.CLAM_ADDRESS,
+      POLYGON_MAINNET.sCLAM_ADDRESS,
+      POLYGON_MAINNET.STAKING_ADDRESS,
+      '0xc67aBdA25D0421FE9Dc1afd64183b179A426a256',
+      epoch._length,
+      epoch.endTime,
+    ],
+  })
 }
 
 main()

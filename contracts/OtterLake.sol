@@ -423,6 +423,26 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
         emit TermAdded(note_, minLockAmount_, lockPeriod_, multiplier_);
     }
 
+    enum TERM_SETTING {
+        MIN_LOCK_AMOUNT,
+        LOCK_PERIOD
+    }
+
+    function setTerm(
+        address note_,
+        TERM_SETTING setting_,
+        uint256 value_
+    ) external onlyOwner {
+        if (setting_ == TERM_SETTING.MIN_LOCK_AMOUNT) {
+            // 0
+            terms[note_].minLockAmount = value_;
+        } else if (setting_ == TERM_SETTING.LOCK_PERIOD) {
+            // 1
+            terms[note_].lockPeriod = value_;
+        }
+        emit TermUpdated(note_, setting_, value_);
+    }
+
     function disableTerm(address note_) external onlyOwner {
         terms[note_].enabled = false;
         emit TermDisabled(note_);
@@ -453,6 +473,11 @@ contract OtterLake is IOtterLake, ReentrancyGuard, Pausable {
     );
     event TermDisabled(address indexed note);
     event TermRemoved(address indexed note);
+    event TermUpdated(
+        address indexed note,
+        TERM_SETTING setting,
+        uint256 value
+    );
     event RewardAdded(uint256 epoch, uint256 reward);
     event Locked(
         address indexed user,
