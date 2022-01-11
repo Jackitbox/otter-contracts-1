@@ -399,13 +399,14 @@ describe('OtterPAWBondStakeDepository', function () {
         maxBondDebt,
         initialBondDebt
       )
-      await daiBond.setPAWDiscount(diamondHand.address, 1000) // 10% discount
+      await daiBond.addDiscount(diamondHand.address, 1000) // 10% discount
 
       await diamondHand.setWhitelist([deployer.address])
       await diamondHand.claim()
       const tokenID = diamondHand.claimed(deployer.address)
 
       expect(await daiBond.bondPriceInUSD(zeroAddress)).to.eq(parseEther('4.0'))
+      expect(await daiBond.discountOf(diamondHand.address)).to.eq(1000)
       expect(await daiBond.bondPriceInUSD(diamondHand.address)).to.eq(
         parseEther('3.6')
       )
@@ -419,6 +420,9 @@ describe('OtterPAWBondStakeDepository', function () {
         tokenID
       )
       expect(await diamondHand.ownerOf(tokenID)).to.eq(daiBond.address)
+      expect(await daiBond.ownerOf(diamondHand.address, 1)).to.eq(
+        deployer.address
+      )
 
       const di0 = await daiBond.discountInfo(deployer.address, 0)
       expect(di0.paw).to.eq(diamondHand.address)
@@ -472,8 +476,12 @@ describe('OtterPAWBondStakeDepository', function () {
         maxBondDebt,
         initialBondDebt
       )
-      await daiBond.setPAWDiscount(diamondHand.address, 1000) // 10% discount
-      await daiBond.setPAWDiscount(stoneHand.address, 500) // 5% discount
+      await daiBond.addDiscount(diamondHand.address, 1000) // 10% discount
+      await daiBond.addDiscount(stoneHand.address, 500) // 5% discount
+
+      expect(await daiBond.pawCount()).to.eq(2)
+      expect(await daiBond.pawAddresses(0)).to.eq(diamondHand.address)
+      expect(await daiBond.pawAddresses(1)).to.eq(stoneHand.address)
 
       await diamondHand.setWhitelist([deployer.address])
       await diamondHand.claim()
@@ -483,9 +491,11 @@ describe('OtterPAWBondStakeDepository', function () {
       const tokenIDofStoneHand = await stoneHand.claimed(deployer.address)
 
       expect(await daiBond.bondPriceInUSD(zeroAddress)).to.eq(parseEther('4.0'))
+      expect(await daiBond.discountOf(diamondHand.address)).to.eq(1000)
       expect(await daiBond.bondPriceInUSD(diamondHand.address)).to.eq(
         parseEther('3.6')
       )
+      expect(await daiBond.discountOf(stoneHand.address)).to.eq(500)
       expect(await daiBond.bondPriceInUSD(stoneHand.address)).to.eq(
         parseEther('3.8')
       )
@@ -501,7 +511,9 @@ describe('OtterPAWBondStakeDepository', function () {
       expect(await diamondHand.ownerOf(tokenIDofDiamondHand)).to.eq(
         daiBond.address
       )
-
+      expect(await daiBond.ownerOf(diamondHand.address, 1)).to.eq(
+        deployer.address
+      )
       await stoneHand.approve(daiBond.address, tokenIDofStoneHand)
       await daiBond.deposit(
         parseEther('90'),
@@ -511,6 +523,9 @@ describe('OtterPAWBondStakeDepository', function () {
         tokenIDofStoneHand
       )
       expect(await stoneHand.ownerOf(tokenIDofStoneHand)).to.eq(daiBond.address)
+      expect(await daiBond.ownerOf(stoneHand.address, 1)).to.eq(
+        deployer.address
+      )
 
       const di0 = await daiBond.discountInfo(deployer.address, 0)
       expect(di0.paw).to.eq(diamondHand.address)

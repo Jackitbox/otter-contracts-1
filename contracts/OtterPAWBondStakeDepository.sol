@@ -64,7 +64,11 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
 
     mapping(address => Bond) public bondInfo; // stores bond information for depositors
     mapping(address => Discount[]) public discountInfo; // stores discount information for depositor
-    mapping(address => uint256) public pawDiscount; // 500 = 5%
+    mapping(address => uint256) public pawDiscounts; // stores discount for paw. 500 = 5%
+    address[] public pawAddresses; // all paws that have discount
+    uint256 public pawCount; // number of paws that have discount
+
+    mapping(address => mapping(uint256 => address)) public pawOwners;
 
     uint256 public totalDebt; // total value of outstanding bonds; used for pricing
     uint256 public lastDecay; // reference timestamp for debt decay
@@ -100,7 +104,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     }
 
     struct Discount {
-        address paw; // paw nft address
+        IERC721 paw;
         uint256 tokenID; // paw nft tokenID
         uint256 discount; // discount when buying
     }
@@ -237,16 +241,47 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     }
 
     /**
-     *  @notice set paw discount
+     *  @notice add discount for a paw
      *  @param _paw address
      *  @param _discount uint
      */
-    function setPAWDiscount(address _paw, uint256 _discount)
-        external
-        onlyOwner
-    {
+    function addDiscount(address _paw, uint256 _discount) external onlyOwner {
         require(_paw != address(0), 'zero address');
-        pawDiscount[_paw] = _discount;
+        pawDiscounts[_paw] = _discount;
+        pawAddresses.push(_paw);
+        pawCount++;
+    }
+
+    /**
+     *  @notice set discount for a paw
+     *  @param _paw address
+     *  @param _discount uint
+     */
+    function setDiscount(address _paw, uint256 _discount) external onlyOwner {
+        require(_paw != address(0), 'zero address');
+        require(pawDiscounts[_paw] != 0, 'discount not added');
+        pawDiscounts[_paw] = _discount;
+    }
+
+    /**
+     *  @notice get discount for a paw
+     *  @param _paw address
+     */
+    function discountOf(address _paw) public view returns (uint256) {
+        return pawDiscounts[_paw];
+    }
+
+    /**
+     *  @notice get original owner of paw
+     *  @param _paw address
+     *  @param _tokenID uint256
+     */
+    function ownerOf(address _paw, uint256 _tokenID)
+        public
+        view
+        returns (address)
+    {
+        return pawOwners[_paw][_tokenID];
     }
 
     /* ======== USER FUNCTIONS ======== */
@@ -292,14 +327,15 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         uint256 profit = value.sub(payout).sub(fee);
 
         if (
-            useDiscountWithPAW(_paw) &&
+            discountOf(_paw) > 0 &&
             IERC721(_paw).ownerOf(_tokenID) == msg.sender
         ) {
+            pawOwners[_paw][_tokenID] = IERC721(_paw).ownerOf(_tokenID);
             IERC721(_paw).safeTransferFrom(msg.sender, address(this), _tokenID);
             discountInfo[_depositor].push(
                 Discount({
-                    discount: pawDiscount[_paw],
-                    paw: _paw,
+                    discount: discountOf(_paw),
+                    paw: IERC721(_paw),
                     tokenID: _tokenID
                 })
             );
@@ -362,11 +398,12 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         uint256 _amount = IsCLAM(sCLAM).balanceForGons(info.gonsPayout);
         IERC20(sCLAM).transfer(_recipient, _amount); // pay user everything due
         for (uint256 i = 0; i < discountInfo[_recipient].length; i++) {
-            IERC721(discountInfo[_recipient][i].paw).safeTransferFrom(
+            discountInfo[_recipient][i].paw.safeTransferFrom(
                 address(this),
                 _recipient,
                 discountInfo[_recipient][i].tokenID
             );
+            delete pawOwners[_recipient][i];
         }
         delete discountInfo[_recipient]; // delete user info
         emit BondRedeemed(_recipient, _amount, 0); // emit bond data
@@ -442,17 +479,6 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     }
 
     /**
-     *  @notice check whether pay with paw or not
-     */
-    function useDiscountWithPAW(address _paw) internal view returns (bool) {
-        if (_paw != address(0) && pawDiscount[_paw] != 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      *  @notice calculate current bond premium
      *  @return price_ uint
      */
@@ -464,8 +490,8 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
             price_ = terms.minimumPrice;
         }
 
-        if (useDiscountWithPAW(_paw)) {
-            price_ = price_.sub(price_.mul(pawDiscount[_paw]).div(10000));
+        if (discountOf(_paw) > 0) {
+            price_ = price_.sub(price_.mul(discountOf(_paw)).div(10000));
         }
     }
 
@@ -482,8 +508,8 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         } else if (terms.minimumPrice != 0) {
             terms.minimumPrice = 0;
         }
-        if (useDiscountWithPAW(_paw)) {
-            price_ = price_.sub(price_.mul(pawDiscount[_paw]).div(10000));
+        if (discountOf(_paw) > 0) {
+            price_ = price_.sub(price_.mul(discountOf(_paw)).div(10000));
         }
     }
 
