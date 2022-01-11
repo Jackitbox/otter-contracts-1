@@ -8,11 +8,9 @@ const dev = process.env.DEV_PRIVATE_KEY
 const deployer = process.env.DEPLOYER_PRIVATE_KEY
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY
 const polygonMainnetRPC =
-  process.env.POLYGON_MAINNET_RPC ||
-  'https://polygon-mainnet.infura.io/v3/0cdd6576febe4961a2b97b9ee9051e5d'
+  process.env.POLYGON_MAINNET_RPC || 'https://polygon-rpc.com'
 const polygonMumbaiRPC =
-  process.env.POLYGON_MUMBAI_RPC ||
-  'https://polygon-mumbai.infura.io/v3/0cdd6576febe4961a2b97b9ee9051e5d'
+  process.env.POLYGON_MUMBAI_RPC || 'https://rpc-mumbai.maticvigil.com/'
 const chainId = Number(process.env.FORK_CHAIN_ID) || 31337
 
 module.exports = {
