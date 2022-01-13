@@ -37,6 +37,9 @@ const reserveAddr = addresses.RESERVES.MAI_CLAM
 const isLPBond = true
 
 async function main() {
+  const Staking = await ethers.getContractFactory('OtterStaking')
+  const staking = Staking.attach(addresses.STAKING_ADDRESS)
+  const epoch = await staking.epoch()
   const Bond = await ethers.getContractFactory('OtterPAWBondStakeDepository')
   // const bond = OtterBondStakeDepository.attach(
   //   '0xda0d7c3d751d00a1ec1c495eF7Cf3db1a202B0B9'
@@ -49,7 +52,10 @@ async function main() {
     reserveAddr,
     addresses.TREASURY_ADDRESS,
     addresses.DAO_ADDRESS,
-    calcAddr
+    calcAddr,
+    epoch._length,
+    epoch.number,
+    epoch.endTime
   )
   console.log('Deployed bond:', bond.address)
   await bond.deployTransaction.wait()

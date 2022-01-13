@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
+// import 'hardhat/console.sol';
 import './interfaces/IOtterTreasury.sol';
 import './interfaces/IOtterStaking.sol';
 import './interfaces/IOtterBondingCalculator.sol';
 import './interfaces/IsCLAM.sol';
+import './interfaces/IPearlNote.sol';
 
 import './types/Ownable.sol';
 
@@ -114,6 +116,13 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         uint256 expiry; // timestamp
     }
 
+    struct Epoch {
+        uint256 length; // in seconds
+        uint256 number;
+        uint256 endTime; // unix epoch time in seconds
+    }
+    Epoch public firstEpoch;
+
     /* ======== INITIALIZATION ======== */
 
     constructor(
@@ -122,7 +131,10 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         address _principle,
         address _treasury,
         address _DAO,
-        address _bondCalculator
+        address _bondCalculator,
+        uint256 _epochLength,
+        uint256 _firstEpochNumber,
+        uint256 _firstEpochEndTime
     ) {
         require(_CLAM != address(0));
         CLAM = _CLAM;
@@ -137,6 +149,12 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         // bondCalculator should be address(0) if not LP bond
         bondCalculator = _bondCalculator;
         isLiquidityBond = (_bondCalculator != address(0));
+
+        firstEpoch = Epoch({
+            length: _epochLength,
+            number: _firstEpochNumber,
+            endTime: _firstEpochEndTime
+        });
     }
 
     /**
@@ -252,41 +270,41 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
 
     /**
      *  @notice add discount for a paw
-     *  @param _paw address
+     *  @param _nft address
      *  @param _discount uint
      *  @param _expiry uint
      */
     function addDiscountTerms(
-        address _paw,
+        address _nft,
         uint256 _discount,
         uint256 _expiry
     ) external onlyOwner {
-        require(_paw != address(0), 'zero address');
-        require(discountTerms[_paw].discount == 0, 'discount already added');
-        discountTerms[_paw] = DiscountTerms({
+        require(_nft != address(0), 'zero address');
+        require(discountTerms[_nft].discount == 0, 'discount already added');
+        discountTerms[_nft] = DiscountTerms({
             discount: _discount,
             expiry: _expiry
         });
-        pawAddresses.push(_paw);
+        pawAddresses.push(_nft);
         pawCount++;
     }
 
     /**
      *  @notice set discount for a paw
-     *  @param _paw address
+     *  @param _nft address
      *  @param _value uint
      */
     function setDiscountTerms(
-        address _paw,
+        address _nft,
         DISCOUNT_PARAMETER _parameter,
         uint256 _value
     ) external onlyOwner {
-        require(_paw != address(0), 'zero address');
-        require(discountTerms[_paw].discount != 0, 'discount not added');
+        require(_nft != address(0), 'zero address');
+        require(discountTerms[_nft].discount != 0, 'discount not added');
         if (_parameter == DISCOUNT_PARAMETER.DISCOUNT) {
-            discountTerms[_paw].discount = _value;
+            discountTerms[_nft].discount = _value;
         } else if (_parameter == DISCOUNT_PARAMETER.EXPIRY) {
-            discountTerms[_paw].expiry = _value;
+            discountTerms[_nft].expiry = _value;
         }
     }
 
@@ -301,32 +319,70 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
 
     /**
      *  @notice get discount for a paw
-     *  @param _paw address
+     *  @param _nft address
      */
-    function discountOf(address _paw) public view returns (uint256) {
+    function discountOfNFT(address _nft) public view returns (uint256) {
+        return discountTerms[_nft].discount;
+    }
+
+    /**
+     *  @notice get discount for a paw
+     *  @param _nft address
+     *  @param _tokenID uint256
+     */
+    function discountOf(address _nft, uint256 _tokenID)
+        public
+        view
+        returns (uint256)
+    {
         return
-            block.timestamp > expiryOf(_paw) ? 0 : discountTerms[_paw].discount;
+            _nft != address(0) &&
+                discountTerms[_nft].discount != 0 &&
+                block.timestamp > expiryOf(_nft, _tokenID)
+                ? 0
+                : discountTerms[_nft].discount;
     }
 
     /**
      *  @notice expiry of paw
-     *  @param _paw address
+     *  @param _nft address
+     *  @param _tokenID uint256
      */
-    function expiryOf(address _paw) public view returns (uint256) {
-        return discountTerms[_paw].expiry;
+    function expiryOf(address _nft, uint256 _tokenID)
+        public
+        view
+        returns (uint256)
+    {
+        return
+            _nft != address(0) &&
+                discountTerms[_nft].discount != 0 &&
+                discountTerms[_nft].expiry == 0
+                ? epochTimestamp(IPearlNote(_nft).endEpoch(_tokenID))
+                : discountTerms[_nft].expiry;
+    }
+
+    /**
+     *  @notice epoch to timestamp
+     *  @param _epoch address
+     */
+    function epochTimestamp(uint256 _epoch) private view returns (uint256) {
+        return
+            (_epoch - firstEpoch.number - 1) *
+            firstEpoch.length +
+            firstEpoch.endTime; // 2021-11-03T00:00:00Z
     }
 
     /**
      *  @notice get original owner of paw
-     *  @param _paw address
+     *  @param _nft address
      *  @param _tokenID uint256
      */
-    function ownerOf(address _paw, uint256 _tokenID)
+    function ownerOf(address _nft, uint256 _tokenID)
         public
         view
         returns (address)
     {
-        return pawOwners[_paw][_tokenID];
+        return pawOwners[_nft][_tokenID];
     }
 
     /* ======== USER FUNCTIONS ======== */
@@ -342,7 +398,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         uint256 _amount,
         uint256 _maxPrice,
         address _depositor,
-        address _paw,
+        address _nft,
         uint256 _tokenID
     ) external returns (uint256) {
         require(_depositor != address(0), 'Invalid address');
@@ -350,19 +406,17 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         decayDebt();
         require(totalDebt <= terms.maxDebt, 'Max capacity reached');
 
-        uint256 priceInUSD = bondPriceInUSD(_paw); // Stored in bond info
-        //uint nativePrice = _bondPrice();
-
         require(
-            _maxPrice >= _bondPrice(_paw),
+            _maxPrice >= _bondPrice(_nft, _tokenID),
             'Slippage limit: more than max price'
         ); // slippage protection
 
+        uint256 priceInUSD = bondPriceInUSD(_nft, _tokenID); // Stored in bond info
         uint256 value = IOtterTreasury(treasury).valueOfToken(
             principle,
             _amount
         );
-        uint256 payout = payoutFor(value, _paw); // payout to bonder is computed
+        uint256 payout = payoutFor(value, _nft, _tokenID); // payout to bonder is computed
 
         require(payout >= 10000000, 'Bond too small'); // must be > 0.01 CLAM ( underflow protection )
         require(payout <= maxPayout(), 'Bond too large'); // size protection because there is no slippage
@@ -372,15 +426,15 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         uint256 profit = value.sub(payout).sub(fee);
 
         if (
-            discountOf(_paw) > 0 &&
-            IERC721(_paw).ownerOf(_tokenID) == msg.sender
+            discountOf(_nft, _tokenID) > 0 &&
+            IERC721(_nft).ownerOf(_tokenID) == msg.sender
         ) {
-            pawOwners[_paw][_tokenID] = IERC721(_paw).ownerOf(_tokenID);
-            IERC721(_paw).safeTransferFrom(msg.sender, address(this), _tokenID);
+            pawOwners[_nft][_tokenID] = IERC721(_nft).ownerOf(_tokenID);
+            IERC721(_nft).safeTransferFrom(msg.sender, address(this), _tokenID);
             discountInfo[_depositor].push(
                 Discount({
-                    discount: discountOf(_paw),
-                    paw: IERC721(_paw),
+                    discount: discountOf(_nft, _tokenID),
+                    paw: IERC721(_nft),
                     tokenID: _tokenID
                 })
             );
@@ -419,8 +473,8 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
             priceInUSD
         );
         emit BondPriceChanged(
-            bondPriceInUSD(address(0)),
-            _bondPrice(address(0)),
+            bondPriceInUSD(address(0), 0),
+            _bondPrice(address(0), 0),
             debtRatio()
         );
 
@@ -512,31 +566,36 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
      *  @param _value uint
      *  @return uint
      */
-    function payoutFor(uint256 _value, address _paw)
-        public
-        view
-        returns (uint256)
-    {
+    function payoutFor(
+        uint256 _value,
+        address _nft,
+        uint256 _tokenID
+    ) public view returns (uint256) {
         return
-            FixedPoint.fraction(_value, bondPrice(_paw)).decode112with18().div(
-                1e16
-            );
+            FixedPoint
+                .fraction(_value, bondPrice(_nft, _tokenID))
+                .decode112with18()
+                .div(1e16);
     }
 
     /**
      *  @notice calculate current bond premium
      *  @return price_ uint
      */
-    function bondPrice(address _paw) public view returns (uint256 price_) {
+    function bondPrice(address _nft, uint256 _tokenID)
+        public
+        view
+        returns (uint256 price_)
+    {
         price_ = terms.controlVariable.mul(debtRatio()).add(1000000000).div(
             1e7
         );
         if (price_ < terms.minimumPrice) {
             price_ = terms.minimumPrice;
         }
-
-        if (discountOf(_paw) > 0) {
-            price_ = price_.sub(price_.mul(discountOf(_paw)).div(10000));
+        uint256 discount_ = discountOf(_nft, _tokenID);
+        if (discount_ > 0) {
+            price_ = price_.sub(price_.mul(discount_).div(10000));
         }
     }
 
@@ -544,7 +603,10 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
      *  @notice calculate current bond price and remove floor if above
      *  @return price_ uint
      */
-    function _bondPrice(address _paw) internal returns (uint256 price_) {
+    function _bondPrice(address _nft, uint256 _tokenID)
+        internal
+        returns (uint256 price_)
+    {
         price_ = terms.controlVariable.mul(debtRatio()).add(1000000000).div(
             1e7
         );
@@ -553,8 +615,9 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         } else if (terms.minimumPrice != 0) {
             terms.minimumPrice = 0;
         }
-        if (discountOf(_paw) > 0) {
-            price_ = price_.sub(price_.mul(discountOf(_paw)).div(10000));
+        uint256 discount_ = discountOf(_nft, _tokenID);
+        if (discount_ > 0) {
+            price_ = price_.sub(price_.mul(discount_).div(10000));
         }
     }
 
@@ -562,17 +625,21 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
      *  @notice converts bond price to DAI value
      *  @return price_ uint
      */
-    function bondPriceInUSD(address _paw) public view returns (uint256 price_) {
+    function bondPriceInUSD(address _nft, uint256 _tokenID)
+        public
+        view
+        returns (uint256 price_)
+    {
         if (isLiquidityBond) {
-            price_ = bondPrice(_paw)
+            price_ = bondPrice(_nft, _tokenID)
                 .mul(
                     IOtterBondingCalculator(bondCalculator).markdown(principle)
                 )
                 .div(100);
         } else {
-            price_ = bondPrice(_paw).mul(10**IERC20(principle).decimals()).div(
-                100
-            );
+            price_ = bondPrice(_nft, _tokenID)
+                .mul(10**IERC20(principle).decimals())
+                .div(100);
         }
     }
 
