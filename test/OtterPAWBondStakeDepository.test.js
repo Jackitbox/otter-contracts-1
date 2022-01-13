@@ -384,8 +384,8 @@ describe('OtterPAWBondStakeDepository', function () {
       await daiBond.addDiscountTerm(paw.address, 1000, endEpoch)
       expect(await daiBond.discountOf(paw.address)).to.eq(1000)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch)
-      expect(await daiBond.pawCount()).to.eq(1)
-      expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
+      expect(await daiBond.nftCount()).to.eq(1)
+      expect(await daiBond.nftAddresses(0)).to.eq(paw.address)
     })
     it('should able to set discount term', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
@@ -394,15 +394,15 @@ describe('OtterPAWBondStakeDepository', function () {
       await daiBond.addDiscountTerm(paw.address, 1000, endEpoch)
       expect(await daiBond.discountOf(paw.address)).to.eq(1000)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch)
-      expect(await daiBond.pawCount()).to.eq(1)
-      expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
+      expect(await daiBond.nftCount()).to.eq(1)
+      expect(await daiBond.nftAddresses(0)).to.eq(paw.address)
 
       await daiBond.setDiscountTerm(paw.address, 0, 500)
       await daiBond.setDiscountTerm(paw.address, 1, endEpoch + 100)
       expect(await daiBond.discountOf(paw.address)).to.eq(500)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch + 100)
-      expect(await daiBond.pawCount()).to.eq(1)
-      expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
+      expect(await daiBond.nftCount()).to.eq(1)
+      expect(await daiBond.nftAddresses(0)).to.eq(paw.address)
     })
     it('should able to remove discount term', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
@@ -411,13 +411,13 @@ describe('OtterPAWBondStakeDepository', function () {
       await daiBond.addDiscountTerm(paw.address, 1000, endEpoch)
       expect(await daiBond.discountOf(paw.address)).to.eq(1000)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch)
-      expect(await daiBond.pawCount()).to.eq(1)
-      expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
+      expect(await daiBond.nftCount()).to.eq(1)
+      expect(await daiBond.nftAddresses(0)).to.eq(paw.address)
 
       await daiBond.removeDiscountTermAt(0)
       expect(await daiBond.discountOf(paw.address)).to.eq(0)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(0)
-      expect(await daiBond.pawCount()).to.eq(0)
+      expect(await daiBond.nftCount()).to.eq(0)
     })
 
     it('should able to add & remove correctly', async function () {
@@ -429,15 +429,15 @@ describe('OtterPAWBondStakeDepository', function () {
       await daiBond.addDiscountTerm(paw1.address, 1, 1) // 2022-04-18
       await daiBond.addDiscountTerm(paw2.address, 2, 2) // 2022-04-18
       await daiBond.addDiscountTerm(paw3.address, 3, 3) // 2022-04-18
-      expect(await daiBond.pawCount()).to.eq(3)
-      expect(await daiBond.pawAddresses(0)).to.eq(paw1.address)
-      expect(await daiBond.pawAddresses(1)).to.eq(paw2.address)
-      expect(await daiBond.pawAddresses(2)).to.eq(paw3.address)
+      expect(await daiBond.nftCount()).to.eq(3)
+      expect(await daiBond.nftAddresses(0)).to.eq(paw1.address)
+      expect(await daiBond.nftAddresses(1)).to.eq(paw2.address)
+      expect(await daiBond.nftAddresses(2)).to.eq(paw3.address)
 
       await daiBond.removeDiscountTermAt(1)
-      expect(await daiBond.pawCount()).to.eq(2)
-      expect(await daiBond.pawAddresses(0)).to.eq(paw1.address)
-      expect(await daiBond.pawAddresses(1)).to.eq(paw3.address)
+      expect(await daiBond.nftCount()).to.eq(2)
+      expect(await daiBond.nftAddresses(0)).to.eq(paw1.address)
+      expect(await daiBond.nftAddresses(1)).to.eq(paw3.address)
     })
 
     it('should get endEpoch from note', async function () {
@@ -465,8 +465,8 @@ describe('OtterPAWBondStakeDepository', function () {
       expect(await daiBond.discountOf(note.address)).to.eq(1000)
       expect(await daiBond.discountOfToken(note.address, 0)).to.eq(1000)
       expect(await daiBond.endEpochOf(note.address, 0)).to.eq(endEpoch)
-      expect(await daiBond.pawCount()).to.eq(1)
-      expect(await daiBond.pawAddresses(0)).to.eq(note.address)
+      expect(await daiBond.nftCount()).to.eq(1)
+      expect(await daiBond.nftAddresses(0)).to.eq(note.address)
     })
 
     it('should not discount when note expired', async function () {
@@ -500,8 +500,8 @@ describe('OtterPAWBondStakeDepository', function () {
       expect(await daiBond.discountOf(note.address)).to.eq(1000)
       expect(await daiBond.discountOfToken(note.address, 0)).to.eq(0)
       expect(await daiBond.endEpochOf(note.address, 0)).to.eq(endEpoch)
-      expect(await daiBond.pawCount()).to.eq(1)
-      expect(await daiBond.pawAddresses(0)).to.eq(note.address)
+      expect(await daiBond.nftCount()).to.eq(1)
+      expect(await daiBond.nftAddresses(0)).to.eq(note.address)
     })
 
     it('should get discounted price', async function () {
@@ -539,7 +539,7 @@ describe('OtterPAWBondStakeDepository', function () {
       )
     })
 
-    it('should able to buy with paw discount', async function () {
+    it('should able to buy with nft discount', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const diamondHand = await PAW.deploy(
         'diamond hand otter',
@@ -589,7 +589,7 @@ describe('OtterPAWBondStakeDepository', function () {
       )
 
       const di0 = await daiBond.discountInfo(deployer.address, 0)
-      expect(di0.paw).to.eq(diamondHand.address)
+      expect(di0.nft).to.eq(diamondHand.address)
       expect(di0.tokenID).to.eq(1)
       expect(di0.discount).to.eq(1000)
 
@@ -605,7 +605,7 @@ describe('OtterPAWBondStakeDepository', function () {
       expect(await diamondHand.ownerOf(tokenID)).to.eq(deployer.address)
     })
 
-    it('should able to buy twice with paw discount', async function () {
+    it('should able to buy twice with nft discount', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const diamondHand = await PAW.deploy(
         'diamond hand otter',
@@ -678,12 +678,12 @@ describe('OtterPAWBondStakeDepository', function () {
       )
 
       const di0 = await daiBond.discountInfo(deployer.address, 0)
-      expect(di0.paw).to.eq(diamondHand.address)
+      expect(di0.nft).to.eq(diamondHand.address)
       expect(di0.tokenID).to.eq(tokenIDofDiamondHand)
       expect(di0.discount).to.eq(1000)
 
       const di1 = await daiBond.discountInfo(deployer.address, 1)
-      expect(di1.paw).to.eq(stoneHand.address)
+      expect(di1.nft).to.eq(stoneHand.address)
       expect(di1.tokenID).to.eq(tokenIDofStoneHand)
       expect(di1.discount).to.eq(500)
 

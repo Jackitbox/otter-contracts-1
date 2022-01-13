@@ -66,11 +66,11 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
 
     mapping(address => Bond) public bondInfo; // stores bond information for depositors
     mapping(address => Discount[]) public discountInfo; // stores discount information for depositor
-    mapping(address => DiscountTerms) public discountTerms; // stores discount terms for paw.
-    address[] public pawAddresses; // all paws that have discount
-    uint256 public pawCount; // number of paws that have discount
+    mapping(address => DiscountTerms) public discountTerms; // stores discount terms for nft.
+    address[] public nftAddresses; // all nfts that have discount
+    uint256 public nftCount; // number of nfts that have discount
 
-    mapping(address => mapping(uint256 => address)) public pawOwners;
+    mapping(address => mapping(uint256 => address)) public nftOwners;
 
     uint256 public totalDebt; // total value of outstanding bonds; used for pricing
     uint256 public lastDecay; // reference timestamp for debt decay
@@ -106,8 +106,8 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     }
 
     struct Discount {
-        IERC721 paw;
-        uint256 tokenID; // paw nft tokenID
+        IERC721 nft;
+        uint256 tokenID; // nft tokenID
         uint256 discount; // discount when buying
     }
 
@@ -261,7 +261,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     }
 
     /**
-     *  @notice add discount for a paw
+     *  @notice add discount for a nft
      *  @param _nft address
      *  @param _discount uint
      *  @param _endEpoch uint
@@ -277,12 +277,12 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
             discount: _discount,
             endEpoch: _endEpoch
         });
-        pawAddresses.push(_nft);
-        pawCount++;
+        nftAddresses.push(_nft);
+        nftCount++;
     }
 
     /**
-     *  @notice set discount for a paw
+     *  @notice set discount for a nft
      *  @param _nft address
      *  @param _value uint
      */
@@ -301,12 +301,12 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     }
 
     function removeDiscountTermAt(uint256 _index) external onlyOwner {
-        require(_index < pawAddresses.length);
-        address pawAddress = pawAddresses[_index];
-        delete discountTerms[pawAddress];
-        pawAddresses[_index] = pawAddresses[pawAddresses.length - 1];
-        delete pawAddresses[pawAddresses.length - 1];
-        pawCount--;
+        require(_index < nftAddresses.length);
+        address nftAddress = nftAddresses[_index];
+        delete discountTerms[nftAddress];
+        nftAddresses[_index] = nftAddresses[nftAddresses.length - 1];
+        delete nftAddresses[nftAddresses.length - 1];
+        nftCount--;
     }
 
     /**
@@ -337,7 +337,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     }
 
     /**
-     *  @notice end epoch of paw
+     *  @notice end epoch of nft
      *  @param _nft address
      *  @param _tokenID uint256
      */
@@ -364,7 +364,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         view
         returns (address)
     {
-        return pawOwners[_nft][_tokenID];
+        return nftOwners[_nft][_tokenID];
     }
 
     /* ======== USER FUNCTIONS ======== */
@@ -411,12 +411,12 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
             discountOfToken(_nft, _tokenID) > 0 &&
             IERC721(_nft).ownerOf(_tokenID) == msg.sender
         ) {
-            pawOwners[_nft][_tokenID] = IERC721(_nft).ownerOf(_tokenID);
+            nftOwners[_nft][_tokenID] = IERC721(_nft).ownerOf(_tokenID);
             IERC721(_nft).safeTransferFrom(msg.sender, address(this), _tokenID);
             discountInfo[_depositor].push(
                 Discount({
                     discount: discountOfToken(_nft, _tokenID),
-                    paw: IERC721(_nft),
+                    nft: IERC721(_nft),
                     tokenID: _tokenID
                 })
             );
@@ -479,12 +479,12 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         uint256 _amount = IsCLAM(sCLAM).balanceForGons(info.gonsPayout);
         IERC20(sCLAM).transfer(_recipient, _amount); // pay user everything due
         for (uint256 i = 0; i < discountInfo[_recipient].length; i++) {
-            discountInfo[_recipient][i].paw.safeTransferFrom(
+            discountInfo[_recipient][i].nft.safeTransferFrom(
                 address(this),
                 _recipient,
                 discountInfo[_recipient][i].tokenID
             );
-            delete pawOwners[_recipient][i];
+            delete nftOwners[_recipient][i];
         }
         delete discountInfo[_recipient]; // delete user info
         emit BondRedeemed(_recipient, _amount, 0); // emit bond data
