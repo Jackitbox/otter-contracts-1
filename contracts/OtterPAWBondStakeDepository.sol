@@ -266,7 +266,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
      *  @param _discount uint
      *  @param _endEpoch uint
      */
-    function addDiscountTerms(
+    function addDiscountTerm(
         address _nft,
         uint256 _discount,
         uint256 _endEpoch
@@ -286,7 +286,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
      *  @param _nft address
      *  @param _value uint
      */
-    function setDiscountTerms(
+    function setDiscountTerm(
         address _nft,
         DISCOUNT_PARAMETER _parameter,
         uint256 _value
@@ -300,7 +300,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         }
     }
 
-    function removeDiscountTermsAt(uint256 _index) external onlyOwner {
+    function removeDiscountTermAt(uint256 _index) external onlyOwner {
         require(_index < pawAddresses.length);
         address pawAddress = pawAddresses[_index];
         delete discountTerms[pawAddress];

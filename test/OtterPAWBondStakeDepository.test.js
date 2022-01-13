@@ -377,44 +377,44 @@ describe('OtterPAWBondStakeDepository', function () {
     })
   })
   describe('discount', function () {
-    it('should able to add discount terms', async function () {
+    it('should able to add discount term', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const paw = await PAW.deploy('paw', 'paw', 'ipfs://metadata')
       const endEpoch = 10000
-      await daiBond.addDiscountTerms(paw.address, 1000, endEpoch)
+      await daiBond.addDiscountTerm(paw.address, 1000, endEpoch)
       expect(await daiBond.discountOf(paw.address)).to.eq(1000)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
     })
-    it('should able to set discount terms', async function () {
+    it('should able to set discount term', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const paw = await PAW.deploy('paw', 'paw', 'ipfs://metadata')
       const endEpoch = 10000
-      await daiBond.addDiscountTerms(paw.address, 1000, endEpoch)
+      await daiBond.addDiscountTerm(paw.address, 1000, endEpoch)
       expect(await daiBond.discountOf(paw.address)).to.eq(1000)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
 
-      await daiBond.setDiscountTerms(paw.address, 0, 500)
-      await daiBond.setDiscountTerms(paw.address, 1, endEpoch + 100)
+      await daiBond.setDiscountTerm(paw.address, 0, 500)
+      await daiBond.setDiscountTerm(paw.address, 1, endEpoch + 100)
       expect(await daiBond.discountOf(paw.address)).to.eq(500)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch + 100)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
     })
-    it('should able to remove discount terms', async function () {
+    it('should able to remove discount term', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const paw = await PAW.deploy('paw', 'paw', 'ipfs://metadata')
       const endEpoch = 10000
-      await daiBond.addDiscountTerms(paw.address, 1000, endEpoch)
+      await daiBond.addDiscountTerm(paw.address, 1000, endEpoch)
       expect(await daiBond.discountOf(paw.address)).to.eq(1000)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
 
-      await daiBond.removeDiscountTermsAt(0)
+      await daiBond.removeDiscountTermAt(0)
       expect(await daiBond.discountOf(paw.address)).to.eq(0)
       expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(0)
       expect(await daiBond.pawCount()).to.eq(0)
@@ -426,15 +426,15 @@ describe('OtterPAWBondStakeDepository', function () {
       const paw2 = await PAW.deploy('paw', 'paw', 'ipfs://metadata')
       const paw3 = await PAW.deploy('paw', 'paw', 'ipfs://metadata')
 
-      await daiBond.addDiscountTerms(paw1.address, 1, 1) // 2022-04-18
-      await daiBond.addDiscountTerms(paw2.address, 2, 2) // 2022-04-18
-      await daiBond.addDiscountTerms(paw3.address, 3, 3) // 2022-04-18
+      await daiBond.addDiscountTerm(paw1.address, 1, 1) // 2022-04-18
+      await daiBond.addDiscountTerm(paw2.address, 2, 2) // 2022-04-18
+      await daiBond.addDiscountTerm(paw3.address, 3, 3) // 2022-04-18
       expect(await daiBond.pawCount()).to.eq(3)
       expect(await daiBond.pawAddresses(0)).to.eq(paw1.address)
       expect(await daiBond.pawAddresses(1)).to.eq(paw2.address)
       expect(await daiBond.pawAddresses(2)).to.eq(paw3.address)
 
-      await daiBond.removeDiscountTermsAt(1)
+      await daiBond.removeDiscountTermAt(1)
       expect(await daiBond.pawCount()).to.eq(2)
       expect(await daiBond.pawAddresses(0)).to.eq(paw1.address)
       expect(await daiBond.pawAddresses(1)).to.eq(paw3.address)
@@ -461,7 +461,7 @@ describe('OtterPAWBondStakeDepository', function () {
         lake.mint(note.address, deployer.address, 100, endEpoch)
       ).to.changeTokenBalance(pearl, deployer, -100)
 
-      await daiBond.addDiscountTerms(note.address, 1000, 0) // endEpoch 0 means get due date from note
+      await daiBond.addDiscountTerm(note.address, 1000, 0) // endEpoch 0 means get due date from note
       expect(await daiBond.discountOf(note.address)).to.eq(1000)
       expect(await daiBond.discountOfToken(note.address, 0)).to.eq(1000)
       expect(await daiBond.endEpochOf(note.address, 0)).to.eq(endEpoch)
@@ -490,7 +490,7 @@ describe('OtterPAWBondStakeDepository', function () {
         lake.mint(note.address, deployer.address, 100, endEpoch)
       ).to.changeTokenBalance(pearl, deployer, -100)
 
-      await daiBond.addDiscountTerms(note.address, 1000, endEpoch)
+      await daiBond.addDiscountTerm(note.address, 1000, endEpoch)
 
       // await timeAndMine.increaseTime(firstEpochTime + epochLength + 1)
       // await timeAndMine.mine()
@@ -530,7 +530,7 @@ describe('OtterPAWBondStakeDepository', function () {
         initialBondDebt
       )
 
-      await daiBond.addDiscountTerms(paw.address, 1000, 4070908800) // 2099-01-01
+      await daiBond.addDiscountTerm(paw.address, 1000, 4070908800) // 2099-01-01
       expect(await daiBond.bondPriceInUSD(zeroAddress, 0)).to.eq(
         parseEther('4')
       )
@@ -569,7 +569,7 @@ describe('OtterPAWBondStakeDepository', function () {
         maxBondDebt,
         initialBondDebt
       )
-      await daiBond.addDiscountTerms(diamondHand.address, 1000, 4070908800) // 2099-01-01
+      await daiBond.addDiscountTerm(diamondHand.address, 1000, 4070908800) // 2099-01-01
 
       await diamondHand.setWhitelist([deployer.address])
       await diamondHand.claim()
@@ -640,8 +640,8 @@ describe('OtterPAWBondStakeDepository', function () {
         maxBondDebt,
         initialBondDebt
       )
-      await daiBond.addDiscountTerms(diamondHand.address, 1000, 4070908800) // 2099-01-01
-      await daiBond.addDiscountTerms(stoneHand.address, 500, 4070908800) // 2099-01-01
+      await daiBond.addDiscountTerm(diamondHand.address, 1000, 4070908800) // 2099-01-01
+      await daiBond.addDiscountTerm(stoneHand.address, 500, 4070908800) // 2099-01-01
 
       await diamondHand.setWhitelist([deployer.address])
       await diamondHand.claim()
