@@ -1,4 +1,4 @@
-const { ethers, timeAndMine } = require('hardhat')
+const { ethers, timeAndMine, network } = require('hardhat')
 const { expect } = require('chai')
 const {
   formatUnits,
@@ -380,40 +380,43 @@ describe('OtterPAWBondStakeDepository', function () {
     it('should able to add discount terms', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const paw = await PAW.deploy('paw', 'paw', 'ipfs://metadata')
-      await daiBond.addDiscountTerms(paw.address, 1000, 1650240000) // 2022-04-18
-      expect(await daiBond.discountOf(paw.address, 0)).to.eq(1000)
-      expect(await daiBond.expiryOf(paw.address, 0)).to.eq(1650240000)
+      const endEpoch = 10000
+      await daiBond.addDiscountTerms(paw.address, 1000, endEpoch)
+      expect(await daiBond.discountOf(paw.address)).to.eq(1000)
+      expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
     })
     it('should able to set discount terms', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const paw = await PAW.deploy('paw', 'paw', 'ipfs://metadata')
-      await daiBond.addDiscountTerms(paw.address, 1000, 1650240000) // 2022-04-18
-      expect(await daiBond.discountOf(paw.address, 0)).to.eq(1000)
-      expect(await daiBond.expiryOf(paw.address, 0)).to.eq(1650240000)
+      const endEpoch = 10000
+      await daiBond.addDiscountTerms(paw.address, 1000, endEpoch)
+      expect(await daiBond.discountOf(paw.address)).to.eq(1000)
+      expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
 
       await daiBond.setDiscountTerms(paw.address, 0, 500)
-      await daiBond.setDiscountTerms(paw.address, 1, 1650326400)
-      expect(await daiBond.discountOf(paw.address, 0)).to.eq(500)
-      expect(await daiBond.expiryOf(paw.address, 0)).to.eq(1650326400)
+      await daiBond.setDiscountTerms(paw.address, 1, endEpoch + 100)
+      expect(await daiBond.discountOf(paw.address)).to.eq(500)
+      expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch + 100)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
     })
     it('should able to remove discount terms', async function () {
       const PAW = await ethers.getContractFactory('OtterPAW')
       const paw = await PAW.deploy('paw', 'paw', 'ipfs://metadata')
-      await daiBond.addDiscountTerms(paw.address, 1000, 1650240000) // 2022-04-18
-      expect(await daiBond.discountOf(paw.address, 0)).to.eq(1000)
-      expect(await daiBond.expiryOf(paw.address, 0)).to.eq(1650240000)
+      const endEpoch = 10000
+      await daiBond.addDiscountTerms(paw.address, 1000, endEpoch)
+      expect(await daiBond.discountOf(paw.address)).to.eq(1000)
+      expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(endEpoch)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
 
       await daiBond.removeDiscountTermsAt(0)
-      expect(await daiBond.discountOf(paw.address, 0)).to.eq(0)
-      expect(await daiBond.expiryOf(paw.address, 0)).to.eq(0)
+      expect(await daiBond.discountOf(paw.address)).to.eq(0)
+      expect(await daiBond.endEpochOf(paw.address, 0)).to.eq(0)
       expect(await daiBond.pawCount()).to.eq(0)
     })
 
@@ -437,18 +440,7 @@ describe('OtterPAWBondStakeDepository', function () {
       expect(await daiBond.pawAddresses(1)).to.eq(paw3.address)
     })
 
-    it('should not discount when paw expired', async function () {
-      const PAW = await ethers.getContractFactory('OtterPAW')
-      const paw = await PAW.deploy('paw', 'paw', 'ipfs://metadata')
-      await daiBond.addDiscountTerms(paw.address, 1000, firstEpochTime)
-      expect(await daiBond.discountOfNFT(paw.address)).to.eq(1000)
-      expect(await daiBond.discountOf(paw.address, 0)).to.eq(0)
-      expect(await daiBond.expiryOf(paw.address, 0)).to.eq(firstEpochTime)
-      expect(await daiBond.pawCount()).to.eq(1)
-      expect(await daiBond.pawAddresses(0)).to.eq(paw.address)
-    })
-
-    it('should get expiry date from note', async function () {
+    it('should get endEpoch from note', async function () {
       const PEARL = await ethers.getContractFactory('DAI')
       const pearl = await PEARL.deploy(0)
       const LAKE = await ethers.getContractFactory('MockLake')
@@ -469,11 +461,10 @@ describe('OtterPAWBondStakeDepository', function () {
         lake.mint(note.address, deployer.address, 100, endEpoch)
       ).to.changeTokenBalance(pearl, deployer, -100)
 
-      await daiBond.addDiscountTerms(note.address, 1000, 0) // expiry 0 means get due date from note
-      expect(await daiBond.discountOf(note.address, 0)).to.eq(1000)
-      expect(await daiBond.expiryOf(note.address, 0)).to.eq(
-        firstEpochTime + (endEpoch - firstEpochNumber - 1) * epochLength
-      )
+      await daiBond.addDiscountTerms(note.address, 1000, 0) // endEpoch 0 means get due date from note
+      expect(await daiBond.discountOf(note.address)).to.eq(1000)
+      expect(await daiBond.discountOfToken(note.address, 0)).to.eq(1000)
+      expect(await daiBond.endEpochOf(note.address, 0)).to.eq(endEpoch)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(note.address)
     })
@@ -499,11 +490,16 @@ describe('OtterPAWBondStakeDepository', function () {
         lake.mint(note.address, deployer.address, 100, endEpoch)
       ).to.changeTokenBalance(pearl, deployer, -100)
 
-      await daiBond.addDiscountTerms(note.address, 1000, 0) // expiry 0 means get due date from note
-      expect(await daiBond.discountOf(note.address, 0)).to.eq(0)
-      expect(await daiBond.expiryOf(note.address, 0)).to.eq(
-        firstEpochTime + (endEpoch - firstEpochNumber - 1) * epochLength
-      )
+      await daiBond.addDiscountTerms(note.address, 1000, endEpoch)
+
+      // await timeAndMine.increaseTime(firstEpochTime + epochLength + 1)
+      // await timeAndMine.mine()
+      await network.provider.send('evm_increaseTime', [28802])
+      await network.provider.send('evm_mine')
+
+      expect(await daiBond.discountOf(note.address)).to.eq(1000)
+      expect(await daiBond.discountOfToken(note.address, 0)).to.eq(0)
+      expect(await daiBond.endEpochOf(note.address, 0)).to.eq(endEpoch)
       expect(await daiBond.pawCount()).to.eq(1)
       expect(await daiBond.pawAddresses(0)).to.eq(note.address)
     })

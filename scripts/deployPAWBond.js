@@ -109,10 +109,10 @@ async function main() {
     },
   ]
 
-  const expiry = Math.floor(Date.now() / 1000) + 86400 * 90 // expires after 90 days
+  const endEpoch = epoch.number.add(270)
   for (const { name, address, discount } of discounts) {
-    await (await bond.addDiscountTerms(address, discount, expiry)).wait()
-    console.log(`discount added: ${name} ${address} ${discount} ${expiry}`)
+    await (await bond.addDiscountTerms(address, discount, endEpoch)).wait()
+    console.log(`discount added: ${name} ${address} ${discount} ${endEpoch}`)
   }
 
   // await (await treasury.queue('2', reserveAddr)).wait()
