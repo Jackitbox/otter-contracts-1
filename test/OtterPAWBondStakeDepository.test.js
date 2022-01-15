@@ -588,10 +588,12 @@ describe('OtterPAWBondStakeDepository', function () {
         deployer.address
       )
 
-      const di0 = await daiBond.discountInfo(deployer.address, 0)
-      expect(di0.nft).to.eq(diamondHand.address)
-      expect(di0.tokenID).to.eq(1)
-      expect(di0.discount).to.eq(1000)
+      const bondInfo = await daiBond.bondInfo(deployer.address)
+      expect(bondInfo.discountsCount).to.eq(1)
+      const discountInfo = await daiBond.discountsUsed(deployer.address, 0)
+      expect(discountInfo.nft).to.eq(diamondHand.address)
+      expect(discountInfo.tokenID).to.eq(1)
+      expect(discountInfo.discount).to.eq(1000)
 
       await timeAndMine.increaseTime(5)
       await expect(daiBond.redeem(deployer.address)).to.be.revertedWith(
@@ -677,15 +679,18 @@ describe('OtterPAWBondStakeDepository', function () {
         deployer.address
       )
 
-      const di0 = await daiBond.discountInfo(deployer.address, 0)
-      expect(di0.nft).to.eq(diamondHand.address)
-      expect(di0.tokenID).to.eq(tokenIDofDiamondHand)
-      expect(di0.discount).to.eq(1000)
+      const bondInfo = await daiBond.bondInfo(deployer.address)
+      expect(bondInfo.discountsCount).to.eq(2)
 
-      const di1 = await daiBond.discountInfo(deployer.address, 1)
-      expect(di1.nft).to.eq(stoneHand.address)
-      expect(di1.tokenID).to.eq(tokenIDofStoneHand)
-      expect(di1.discount).to.eq(500)
+      const discount0 = await daiBond.discountsUsed(deployer.address, 0)
+      expect(discount0.nft).to.eq(diamondHand.address)
+      expect(discount0.tokenID).to.eq(tokenIDofDiamondHand)
+      expect(discount0.discount).to.eq(1000)
+
+      const discount1 = await daiBond.discountsUsed(deployer.address, 1)
+      expect(discount1.nft).to.eq(stoneHand.address)
+      expect(discount1.tokenID).to.eq(tokenIDofStoneHand)
+      expect(discount1.discount).to.eq(500)
 
       await timeAndMine.increaseTime(5)
       await expect(daiBond.redeem(deployer.address)).to.be.revertedWith(

@@ -65,7 +65,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     Adjust public adjustment; // stores adjustment to BCV data
 
     mapping(address => Bond) public bondInfo; // stores bond information for depositors
-    mapping(address => Discount[]) public discountInfo; // stores discount information for depositor
+    mapping(address => Discount[]) public discountsUsed; // stores discount information for depositor
     mapping(address => DiscountTerms) public discountTerms; // stores discount terms for nft.
     address[] public nftAddresses; // all nfts that have discount
     uint256 public nftCount; // number of nfts that have discount
@@ -94,6 +94,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         uint256 lastTimestamp; // Last interaction
         uint256 pricePaid; // In DAI, for front end viewing
         uint256 gonsPayout; // sCLAM gons remaining to be paid
+        uint256 discountsCount;
     }
 
     // Info for incremental adjustments to control variable
@@ -407,20 +408,6 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         uint256 fee = payout.mul(terms.fee).div(10000);
         uint256 profit = value.sub(payout).sub(fee);
 
-        if (
-            discountOfToken(_nft, _tokenID) > 0 &&
-            IERC721(_nft).ownerOf(_tokenID) == msg.sender
-        ) {
-            nftOwners[_nft][_tokenID] = IERC721(_nft).ownerOf(_tokenID);
-            IERC721(_nft).safeTransferFrom(msg.sender, address(this), _tokenID);
-            discountInfo[_depositor].push(
-                Discount({
-                    discount: discountOfToken(_nft, _tokenID),
-                    nft: IERC721(_nft),
-                    tokenID: _tokenID
-                })
-            );
-        }
         IERC20(principle).safeTransferFrom(msg.sender, address(this), _amount);
         IERC20(principle).approve(address(treasury), _amount);
         IOtterTreasury(treasury).deposit(_amount, principle, profit);
@@ -439,13 +426,28 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
 
         uint256 stakeGons = IsCLAM(sCLAM).gonsForBalance(payout);
         // depositor info is stored
-        bondInfo[_depositor] = Bond({
-            gonsPayout: bondInfo[_depositor].gonsPayout.add(stakeGons),
-            payout: bondInfo[_depositor].payout.add(payout),
-            vesting: terms.vestingTerm,
-            lastTimestamp: block.timestamp,
-            pricePaid: priceInUSD
-        });
+        bondInfo[_depositor].gonsPayout = bondInfo[_depositor].gonsPayout.add(
+            stakeGons
+        );
+        bondInfo[_depositor].payout = bondInfo[_depositor].payout.add(payout);
+        bondInfo[_depositor].vesting = terms.vestingTerm;
+        bondInfo[_depositor].lastTimestamp = block.timestamp;
+        bondInfo[_depositor].pricePaid = priceInUSD;
+        if (
+            discountOfToken(_nft, _tokenID) > 0 &&
+            IERC721(_nft).ownerOf(_tokenID) == msg.sender
+        ) {
+            nftOwners[_nft][_tokenID] = IERC721(_nft).ownerOf(_tokenID);
+            IERC721(_nft).safeTransferFrom(msg.sender, address(this), _tokenID);
+            discountsUsed[_depositor].push(
+                Discount({
+                    discount: discountOfToken(_nft, _tokenID),
+                    nft: IERC721(_nft),
+                    tokenID: _tokenID
+                })
+            );
+            bondInfo[_depositor].discountsCount++;
+        }
 
         // indexed events are emitted
         emit BondCreated(
@@ -478,15 +480,15 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
         delete bondInfo[_recipient]; // delete user info
         uint256 _amount = IsCLAM(sCLAM).balanceForGons(info.gonsPayout);
         IERC20(sCLAM).transfer(_recipient, _amount); // pay user everything due
-        for (uint256 i = 0; i < discountInfo[_recipient].length; i++) {
-            discountInfo[_recipient][i].nft.safeTransferFrom(
+        for (uint256 i = 0; i < discountsUsed[_recipient].length; i++) {
+            discountsUsed[_recipient][i].nft.safeTransferFrom(
                 address(this),
                 _recipient,
-                discountInfo[_recipient][i].tokenID
+                discountsUsed[_recipient][i].tokenID
             );
             delete nftOwners[_recipient][i];
         }
-        delete discountInfo[_recipient]; // delete user info
+        delete discountsUsed[_recipient]; // delete user info
         emit BondRedeemed(_recipient, _amount, 0); // emit bond data
         return _amount;
     }
