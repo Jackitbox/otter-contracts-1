@@ -187,12 +187,23 @@ describe('OtterLakeDistributor', function () {
       ).to.changeTokenBalance(clam, deployer, 150)
     })
 
-    it('should not able to extract pearl after finalized', async function () {
+    it('should not able to extract clam after finalized', async function () {
       await otterLakeDistributor.finalize()
       await clam.transfer(otterLakeDistributor.address, 150)
       await expect(
         otterLakeDistributor.recoverERC20(clam.address, 150)
       ).to.be.revertedWith('OtterLakeDistributor: Cannot withdraw the clam')
+    })
+  })
+
+  describe.only('adjust', function () {
+    it('should adjust to target', async function () {
+      await otterLakeDistributor.setRate(5000)
+      await otterLakeDistributor.setAdjustment(true, 500, 5500)
+
+      await otterLakeDistributor.distribute()
+
+      expect(await otterLakeDistributor.rate()).to.eq(5500)
     })
   })
 })

@@ -115,14 +115,14 @@ contract OtterLakeDistributor is Ownable, IStakingDistributor {
                 rate = rate.add(adjustment.rate); // raise rate
                 if (rate >= adjustment.target) {
                     // if target met
-                    rate = 0; // turn off adjustment
+                    adjustment.rate = 0; // turn off adjustment
                 }
             } else {
                 // if rate should decrease
                 rate = rate.sub(adjustment.rate); // lower rate
                 if (rate <= adjustment.target) {
                     // if target met
-                    rate = 0; // turn off adjustment
+                    adjustment.rate = 0; // turn off adjustment
                 }
             }
         }
