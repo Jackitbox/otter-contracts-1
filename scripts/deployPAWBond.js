@@ -18,9 +18,6 @@ let addresses = {
     MAI_CLAM: '0x706587BD39322A6a78ddD5491cDbb783F8FD983E',
   },
   NFTS: {
-    SAFE_HAND_28DAY_NOTE: '0x03883Df947Af7C0BE2aCe9163489fa85A9947008',
-    SAFE_HAND_90DAY_NOTE: '0x5a30229BFbe5A22343aE67D4C077c101768Fd757',
-    SAFE_HAND_180DAY_NOTE: '0x931f0857130bcd221D30C06d80aD98affe3Aa526',
     FURRY_HAND_28DAY_NOTE: '0x7C1a1C1e540E6c6F59F1748C3C2Edf39f8Cc06ee',
     FURRY_HAND_OTTER: '0x2A6c8531F8a125098b2f2beeaBb2705FE348474A',
     STONE_HAND_90DAY_NOTE: '0xBe982E164402970da7C72083FB8D5FcdeF751DfA',
@@ -62,21 +59,6 @@ async function main() {
   await (await bond.setStaking(addresses.STAKING_ADDRESS)).wait()
 
   const discounts = [
-    {
-      name: 'SAFE_HAND_28DAY_NOTE',
-      address: addresses.NFTS.SAFE_HAND_28DAY_NOTE,
-      discount: 50,
-    },
-    {
-      name: 'SAFE_HAND_90DAY_NOTE',
-      address: addresses.NFTS.SAFE_HAND_90DAY_NOTE,
-      discount: 100,
-    },
-    {
-      name: 'SAFE_HAND_180DAY_NOTE',
-      address: addresses.NFTS.SAFE_HAND_180DAY_NOTE,
-      discount: 200,
-    },
     {
       name: 'FURRY_HAND_OTTER',
       address: addresses.NFTS.FURRY_HAND_OTTER,
