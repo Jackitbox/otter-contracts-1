@@ -70,7 +70,7 @@ contract OtterPAWBondStakeDepository is Ownable, ERC721Holder {
     address[] public nftAddresses; // all nfts that have discount
     uint256 public nftCount; // number of nfts that have discount
 
-    mapping(address => mapping(uint256 => address)) public nftOwners;
+    mapping(address => mapping(uint256 => address)) public nftOwners; // stores original owner of the nft
 
     uint256 public totalDebt; // total value of outstanding bonds; used for pricing
     uint256 public lastDecay; // reference timestamp for debt decay
