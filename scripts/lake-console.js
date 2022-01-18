@@ -26,7 +26,7 @@ let addresses = {
   },
   CLAM_CIRCULATING_SUPPLY: '0x99ee91871cf39A44E3Fc842541274d7eA05AE4b3',
   LAKE: '0xc67aBdA25D0421FE9Dc1afd64183b179A426a256',
-  LAKE_DISTRIBUTOR: '0xeb8E5A2605a687B791f7D7034E15F96AF1114e09',
+  LAKE_DISTRIBUTOR: '0xbB268A4b6be1bD2E676bfd46aaEA03A100324d35',
 }
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
@@ -82,6 +82,10 @@ let lakeDistributor = OtterLakeDistributor.attach(addresses.LAKE_DISTRIBUTOR)
 
 const Note = await ethers.getContractFactory('PearlNote')
 
+await hre.network.provider.request({
+  method: 'evm_increaseTime',
+  params: [86400],
+})
 let days = 14
 await hre.network.provider.request({
   method: 'evm_increaseTime',

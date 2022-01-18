@@ -41,11 +41,12 @@ async function main() {
   const staking = Staking.attach(POLYGON_MAINNET.STAKING_ADDRESS)
   const epoch = await staking.epoch()
 
-  // console.log('Current epoch: ' + epoch.number.toString())
-  // console.log('Epoch length : ' + epoch._length.toString())
-  // console.log('Epoch end time : ' + epoch.endTime.toString())
+  console.log('Current epoch: ' + epoch.number.toString())
+  console.log('Epoch length : ' + epoch._length.toString())
+  console.log('Epoch end time : ' + epoch.endTime.toString())
 
   // const Lake = await ethers.getContractFactory('OtterLake')
+  // const lake = Lake.attach('0xc67aBdA25D0421FE9Dc1afd64183b179A426a256')
   // const lake = await Lake.deploy(
   //   POLYGON_MAINNET.PEARL_ADDRESS,
   //   epoch._length,
@@ -75,7 +76,7 @@ async function main() {
   // await lake.setDistributor(otterLakeDistributor.address)
 
   await hre.run('verify:verify', {
-    address: '0xeb8E5A2605a687B791f7D7034E15F96AF1114e09',
+    address: '0xbB268A4b6be1bD2E676bfd46aaEA03A100324d35',
     constructorArguments: [
       POLYGON_MAINNET.PEARL_ADDRESS,
       POLYGON_MAINNET.CLAM_ADDRESS,
