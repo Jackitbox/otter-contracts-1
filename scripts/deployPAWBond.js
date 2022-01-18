@@ -93,7 +93,7 @@ async function main() {
 
   const endEpoch = epoch.number.add(270)
   for (const { name, address, discount } of discounts) {
-    await (await bond.addDiscountTerms(address, discount, endEpoch)).wait()
+    await (await bond.addDiscountTerm(address, discount, endEpoch)).wait()
     console.log(`discount added: ${name} ${address} ${discount} ${endEpoch}`)
   }
 
