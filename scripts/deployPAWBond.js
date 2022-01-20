@@ -41,81 +41,108 @@ async function main() {
   // const bond = OtterBondStakeDepository.attach(
   //   '0xda0d7c3d751d00a1ec1c495eF7Cf3db1a202B0B9'
   // )
-
   const calcAddr = isLPBond ? addresses.CLAM_BONDING_CALC_ADDRESS : zeroAddress
-  const bond = await Bond.deploy(
-    addresses.CLAM_ADDRESS,
-    addresses.sCLAM_ADDRESS,
-    reserveAddr,
-    addresses.TREASURY_ADDRESS,
-    addresses.DAO_ADDRESS,
-    calcAddr,
-    epoch._length,
-    epoch.number,
-    epoch.endTime
-  )
-  console.log('Deployed bond:', bond.address)
-  await bond.deployTransaction.wait()
-  await (await bond.setStaking(addresses.STAKING_ADDRESS)).wait()
+  await hre.run('verify:verify', {
+    address: '0x2Dc4635c96Ce75B99F7D8B5F36Faf3b774afF831',
+    constructorArguments: [
+      addresses.CLAM_ADDRESS,
+      addresses.sCLAM_ADDRESS,
+      reserveAddr,
+      addresses.TREASURY_ADDRESS,
+      addresses.DAO_ADDRESS,
+      calcAddr,
+      epoch._length,
+      epoch.number,
+      epoch.endTime,
+    ],
+  })
 
-  const discounts = [
-    {
-      name: 'FURRY_HAND_OTTER',
-      address: addresses.NFTS.FURRY_HAND_OTTER,
-      discount: 50,
-    },
-    {
-      name: 'FURRY_HAND_28DAY_NOTE',
-      address: addresses.NFTS.FURRY_HAND_28DAY_NOTE,
-      discount: 50,
-    },
-    {
-      name: 'STONE_HAND_OTTER',
-      address: addresses.NFTS.STONE_HAND_OTTER,
-      discount: 100,
-    },
-    {
-      name: 'STONE_HAND_90DAY_NOTE',
-      address: addresses.NFTS.STONE_HAND_90DAY_NOTE,
-      discount: 100,
-    },
-    {
-      name: 'DIAMOND_HAND_OTTER',
-      address: addresses.NFTS.DIAMOND_HAND_OTTER,
-      discount: 200,
-    },
-    {
-      name: 'DIAMOND_HAND_180DAY_NOTE',
-      address: addresses.NFTS.DIAMOND_HAND_180DAY_NOTE,
-      discount: 200,
-    },
-  ]
-
-  const endEpoch = epoch.number.add(270)
-  for (const { name, address, discount } of discounts) {
-    await (await bond.addDiscountTerm(address, discount, endEpoch)).wait()
-    console.log(`discount added: ${name} ${address} ${discount} ${endEpoch}`)
-  }
-
-  // await (await treasury.queue('2', reserveAddr)).wait()
-
-  // await treasury.toggle('0', daiBond.address, zeroAddress)
-  // await treasury.toggle('2', reserveAddr, zeroAddress)
-
-  // const tokenMinPrice = '5000'
-  // await bond.initializeBondTerms(
-  //   '100',
-  //   '432000',
-  //   '0',
-  //   '50',
-  //   '10000',
-  //   '8000000000000000',
-  //   '5170963135351'
+  // const bond = await Bond.deploy(
+  //   addresses.CLAM_ADDRESS,
+  //   addresses.sCLAM_ADDRESS,
+  //   reserveAddr,
+  //   addresses.TREASURY_ADDRESS,
+  //   addresses.DAO_ADDRESS,
+  //   calcAddr,
+  //   epoch._length,
+  //   epoch.number,
+  //   epoch.endTime,
   // )
+  // console.log('Deployed bond:', bond.address)
+  // await bond.deployTransaction.wait()
+  // await (
+  //   await bond.setStaking(addresses.STAKING_ADDRESS, {
+  //     gasPrice: ethers.utils.parseUnits('300', 'gwei'),
+  //   })
+  // ).wait()
 
-  console.log(
-    `bond initialized, please verify: yarn hardhat verify ${bond.address} ${addresses.CLAM_ADDRESS} ${addresses.sCLAM_ADDRESS} ${reserveAddr} ${addresses.TREASURY_ADDRESS} ${addresses.DAO_ADDRESS} ${calcAddr}`
-  )
+  // const discounts = [
+  //   {
+  //     name: 'FURRY_HAND_OTTER',
+  //     address: addresses.NFTS.FURRY_HAND_OTTER,
+  //     discount: 50,
+  //     endEpoch: epoch.number.add(270),
+  //   },
+  //   {
+  //     name: 'FURRY_HAND_28DAY_NOTE',
+  //     address: addresses.NFTS.FURRY_HAND_28DAY_NOTE,
+  //     discount: 50,
+  //     endEpoch: 0,
+  //   },
+  //   {
+  //     name: 'STONE_HAND_OTTER',
+  //     address: addresses.NFTS.STONE_HAND_OTTER,
+  //     discount: 100,
+  //     endEpoch: epoch.number.add(270),
+  //   },
+  //   {
+  //     name: 'STONE_HAND_90DAY_NOTE',
+  //     address: addresses.NFTS.STONE_HAND_90DAY_NOTE,
+  //     discount: 100,
+  //     endEpoch: 0,
+  //   },
+  //   {
+  //     name: 'DIAMOND_HAND_OTTER',
+  //     address: addresses.NFTS.DIAMOND_HAND_OTTER,
+  //     discount: 200,
+  //     endEpoch: epoch.number.add(270),
+  //   },
+  //   {
+  //     name: 'DIAMOND_HAND_180DAY_NOTE',
+  //     address: addresses.NFTS.DIAMOND_HAND_180DAY_NOTE,
+  //     discount: 200,
+  //     endEpoch: 0,
+  //   },
+  // ]
+
+  // for (const { name, address, discount, endEpoch } of discounts) {
+  //   await (
+  //     await bond.addDiscountTerm(address, discount, endEpoch, {
+  //       gasPrice: ethers.utils.parseUnits('400', 'gwei'),
+  //     })
+  //   ).wait()
+  //   console.log(`discount added: ${name} ${address} ${discount} ${endEpoch}`)
+  // }
+
+  // // await (await treasury.queue('2', reserveAddr)).wait()
+
+  // // await treasury.toggle('0', daiBond.address, zeroAddress)
+  // // await treasury.toggle('2', reserveAddr, zeroAddress)
+
+  // // const tokenMinPrice = '5000'
+  // // await bond.initializeBondTerms(
+  // //   '100',
+  // //   '432000',
+  // //   '0',
+  // //   '50',
+  // //   '10000',
+  // //   '8000000000000000',
+  // //   '5170963135351'
+  // // )
+
+  // console.log(
+  //   `bond initialized, please verify: yarn hardhat verify ${bond.address} ${addresses.CLAM_ADDRESS} ${addresses.sCLAM_ADDRESS} ${reserveAddr} ${addresses.TREASURY_ADDRESS} ${addresses.DAO_ADDRESS} ${calcAddr}`
+  // )
 }
 
 main()
