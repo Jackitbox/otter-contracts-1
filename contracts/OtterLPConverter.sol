@@ -10,27 +10,28 @@ import './types/Ownable.sol';
 import './types/ERC20.sol';
 
 import './libraries/SafeMath.sol';
-import './libraries/SafeERC20.sol';
 
 contract OtterLPConverter is Ownable {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
 
     IERC20 public immutable source;
     IERC20 public immutable target;
     IUniswapV2Router02 public immutable router;
     IOtterTreasury public immutable treasury;
+    address public immutable dao;
 
     constructor(
         address source_,
         address target_,
         address swapRouter_,
-        address treasury_
+        address treasury_,
+        address dao_
     ) {
         source = IERC20(source_);
         target = IERC20(target_);
         router = IUniswapV2Router02(swapRouter_);
         treasury = IOtterTreasury(treasury_);
+        dao = dao_;
     }
 
     /// @notice Swap certain amount of source to source/target LP
@@ -39,7 +40,7 @@ contract OtterLPConverter is Ownable {
         treasury.manage(address(source), amount_);
 
         uint256 halfAmount = amount_.div(2);
-        source.safeApprove(address(router), halfAmount);
+        source.approve(address(router), halfAmount);
         address[] memory path = new address[](2);
         path[0] = address(source);
         path[1] = address(target);
@@ -54,8 +55,8 @@ contract OtterLPConverter is Ownable {
         uint256 sourceBalance = source.balanceOf(address(this));
         uint256 targetBalance = target.balanceOf(address(this));
 
-        source.safeApprove(address(router), sourceBalance);
-        target.safeApprove(address(router), targetBalance);
+        source.approve(address(router), sourceBalance);
+        target.approve(address(router), targetBalance);
 
         router.addLiquidity(
             address(source),
@@ -70,8 +71,13 @@ contract OtterLPConverter is Ownable {
         IUniswapV2Factory factory = IUniswapV2Factory(router.factory());
         IERC20 lp = IERC20(factory.getPair(address(source), address(target)));
         uint256 lpBalance = lp.balanceOf(address(this));
-        lp.safeApprove(address(treasury), lpBalance);
+        lp.approve(address(treasury), lpBalance);
         uint256 profit = treasury.valueOfToken(address(lp), lpBalance);
         treasury.deposit(lpBalance, address(lp), profit);
+    }
+
+    function emergencyWithdraw(address token_) external onlyOwner {
+        uint256 balance = IERC20(token_).balanceOf(address(this));
+        IERC20(token_).transfer(dao, balance);
     }
 }

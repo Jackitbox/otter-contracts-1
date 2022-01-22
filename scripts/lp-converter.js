@@ -55,8 +55,24 @@ let lpConverter = await LPConverter.deploy(
   '0xa3Fa99A148fA48D14Ed51d610c367C61876997F1', // mai
   '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // usdc
   '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap router
-  '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C' // treasury
+  '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
+  '0x929A27c46041196e1a49C7B459d63eC9A20cd879', // dao
+  {
+    nonce: 1091,
+    gasPrice: ethers.utils.parseUnits('500', 'gwei'),
+  }
 )
+await hre.run('verify:verify', {
+  address: lpConverter.address,
+  constructorArguments: [
+    '0xa3Fa99A148fA48D14Ed51d610c367C61876997F1', // mai
+    '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // usdc
+    '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap router
+    '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
+    '0x929A27c46041196e1a49C7B459d63eC9A20cd879', // dao
+  ],
+})
+
 let treasury = await ethers.getContractAt(
   'OtterTreasury',
   addresses.TREASURY_ADDRESS
