@@ -55,11 +55,11 @@ let lpConverter = await LPConverter.deploy(
   '0xa3Fa99A148fA48D14Ed51d610c367C61876997F1', // mai
   '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // usdc
   '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap router
+  '0x5ab5C56B9db92Ba45a0B46a207286cD83C15C939', // curve zap
   '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
   '0x929A27c46041196e1a49C7B459d63eC9A20cd879', // dao
   {
-    nonce: 1091,
-    gasPrice: ethers.utils.parseUnits('500', 'gwei'),
+    gasPrice: ethers.utils.parseUnits('100', 'gwei'),
   }
 )
 await hre.run('verify:verify', {
@@ -68,6 +68,7 @@ await hre.run('verify:verify', {
     '0xa3Fa99A148fA48D14Ed51d610c367C61876997F1', // mai
     '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // usdc
     '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap router
+    '0x5ab5C56B9db92Ba45a0B46a207286cD83C15C939', // curve zap
     '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
     '0x929A27c46041196e1a49C7B459d63eC9A20cd879', // dao
   ],
@@ -75,7 +76,7 @@ await hre.run('verify:verify', {
 
 let treasury = await ethers.getContractAt(
   'OtterTreasury',
-  addresses.TREASURY_ADDRESS
+  '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C'
 )
 
 await deployer.sendTransaction({
@@ -95,9 +96,9 @@ for (var i = 0; i < 86401; i++) {
 await treasury.connect(multisig).toggle(3, lpConverter.address, zeroAddress)
 await treasury.connect(multisig).toggle(4, lpConverter.address, zeroAddress)
 await treasury.connect(multisig).toggle(6, lpConverter.address, zeroAddress)
-await treasury
-  .connect(multisig)
-  .toggle(5, USDCMAI, addresses.CLAM_BONDING_CALC_ADDRESS)
+// await treasury
+//   .connect(multisig)
+//   .toggle(5, USDCMAI, addresses.CLAM_BONDING_CALC_ADDRESS)
 
 let lp = await ethers.getContractAt('IERC20', USDCMAI)
 let usdc = await ethers.getContractAt('IERC20', USDC)

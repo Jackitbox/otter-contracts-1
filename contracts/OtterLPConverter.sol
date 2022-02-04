@@ -11,12 +11,31 @@ import './types/ERC20.sol';
 
 import './libraries/SafeMath.sol';
 
+interface CurveZapDepositor {
+    function exchange_underlying(
+        address pool,
+        int128 i,
+        int128 j,
+        uint256 dx,
+        uint256 min_dy
+    ) external returns (uint256);
+}
+
+interface CurveMetaPool {
+    function get_dy_underlying(
+        int128 i,
+        int128 j,
+        uint256 dx
+    ) external returns (uint256);
+}
+
 contract OtterLPConverter is Ownable {
     using SafeMath for uint256;
 
     IERC20 public immutable source;
     IERC20 public immutable target;
     IUniswapV2Router02 public immutable router;
+    CurveZapDepositor public immutable curveZap;
     IOtterTreasury public immutable treasury;
     address public immutable dao;
 
@@ -24,12 +43,14 @@ contract OtterLPConverter is Ownable {
         address source_,
         address target_,
         address swapRouter_,
+        address curveZap_,
         address treasury_,
         address dao_
     ) {
         source = IERC20(source_);
         target = IERC20(target_);
         router = IUniswapV2Router02(swapRouter_);
+        curveZap = CurveZapDepositor(curveZap_);
         treasury = IOtterTreasury(treasury_);
         dao = dao_;
     }
@@ -39,7 +60,8 @@ contract OtterLPConverter is Ownable {
     function addLiquidity(uint256 amount_) external onlyOwner {
         treasury.manage(address(source), amount_);
 
-        uint256 halfAmount = amount_.div(2);
+        uint256 currentBalance = source.balanceOf(address(this));
+        uint256 halfAmount = currentBalance.div(2);
         source.approve(address(router), halfAmount);
         address[] memory path = new address[](2);
         path[0] = address(source);
@@ -51,6 +73,45 @@ contract OtterLPConverter is Ownable {
             address(this),
             block.timestamp
         );
+
+        uint256 sourceBalance = source.balanceOf(address(this));
+        uint256 targetBalance = target.balanceOf(address(this));
+
+        source.approve(address(router), sourceBalance);
+        target.approve(address(router), targetBalance);
+
+        router.addLiquidity(
+            address(source),
+            address(target),
+            sourceBalance,
+            targetBalance,
+            1,
+            1,
+            address(this),
+            block.timestamp
+        );
+        IUniswapV2Factory factory = IUniswapV2Factory(router.factory());
+        IERC20 lp = IERC20(factory.getPair(address(source), address(target)));
+        uint256 lpBalance = lp.balanceOf(address(this));
+        lp.approve(address(treasury), lpBalance);
+        uint256 profit = treasury.valueOfToken(address(lp), lpBalance);
+        treasury.deposit(lpBalance, address(lp), profit);
+    }
+
+    /// @notice Swap certain amount of source to source/target LP through curve
+    /// @param amount_ the amount in source
+    function addLiquidityCurve(
+        address pool_,
+        int128 i_,
+        int128 j_,
+        uint256 amount_
+    ) external onlyOwner {
+        treasury.manage(address(source), amount_);
+
+        uint256 currentBalance = source.balanceOf(address(this));
+        uint256 halfAmount = currentBalance.div(2);
+        source.approve(address(curveZap), halfAmount);
+        curveZap.exchange_underlying(pool_, i_, j_, halfAmount, 0);
 
         uint256 sourceBalance = source.balanceOf(address(this));
         uint256 targetBalance = target.balanceOf(address(this));
