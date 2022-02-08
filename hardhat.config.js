@@ -37,7 +37,7 @@ module.exports = {
     'polygon-mainnet': {
       url: 'https://polygon-rpc.com',
       accounts: deployer ? [deployer] : deployer,
-      gasPrice: ethers.utils.parseUnits('35', 'gwei').toNumber(),
+      gasPrice: ethers.utils.parseUnits('50', 'gwei').toNumber(),
     },
     'polygon-mumbai': {
       url: polygonMumbaiRPC,
