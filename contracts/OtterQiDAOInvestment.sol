@@ -77,8 +77,8 @@ contract OtterQiDAOInvestment is ERC20Permit, Ownable, IProxyUniswapV2Pair {
         return lp.totalSupply();
     }
 
-    /// @notice Stake USDC/MAI lp to Qi farm
-    /// @param amount_ the amount of USDC/MAI lp
+    /// @notice Stake lp to Qi farm
+    /// @param amount_ the amount of lp
     function stake(uint256 pid_, uint256 amount_) external onlyOwner {
         treasury.manage(address(lp), amount_);
         lp.approve(address(qiFarm), amount_);

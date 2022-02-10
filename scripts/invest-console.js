@@ -54,10 +54,10 @@ const QI = '0x580A84C73811E1839F75d86d75d88cCa0c241fF4'
 
 let Investment = await ethers.getContractFactory('OtterQiDAOInvestment')
 let investment = await Investment.deploy(
-  USDCMAI,
+  '0x9a8b2601760814019b7e6ee0052e25f1c623d1e6', // QI-WMATIC
   QI, // qi token
   QIDAO, // QiDAO farm
-  addresses.TREASURY_ADDRESS
+  '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C' // treasury
 )
 
 let treasury = await ethers.getContractAt(
@@ -85,10 +85,6 @@ for (var i = 0; i < 86401; i++) {
   console.log(i)
 }
 
-await treasury.connect(multisig).toggle(3, lpConverter.address, zeroAddress)
-await treasury.connect(multisig).toggle(4, lpConverter.address, zeroAddress)
-await treasury.connect(multisig).toggle(6, lpConverter.address, zeroAddress)
-
 await treasury.connect(multisig).toggle(4, investment.address, zeroAddress)
 await treasury
   .connect(multisig)
@@ -115,9 +111,9 @@ let farm = await ethers.getContractAt('IQiFarm', QIDAO)
 await hre.run('verify:verify', {
   address: investment.address,
   constructorArguments: [
-    USDCMAI,
+    '0x9a8b2601760814019b7e6ee0052e25f1c623d1e6', // QI-WMATIC
     QI, // qi token
     QIDAO, // QiDAO farm
-    addresses.TREASURY_ADDRESS,
+    '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
   ],
 })

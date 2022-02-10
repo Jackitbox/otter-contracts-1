@@ -52,8 +52,6 @@ const USDC = '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'
 
 let LPConverter = await ethers.getContractFactory('OtterLPConverter')
 let lpConverter = await LPConverter.deploy(
-  '0xa3Fa99A148fA48D14Ed51d610c367C61876997F1', // mai
-  '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // usdc
   '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap router
   '0x5ab5C56B9db92Ba45a0B46a207286cD83C15C939', // curve zap
   '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
@@ -62,11 +60,10 @@ let lpConverter = await LPConverter.deploy(
     gasPrice: ethers.utils.parseUnits('100', 'gwei'),
   }
 )
+
 await hre.run('verify:verify', {
   address: lpConverter.address,
   constructorArguments: [
-    '0xa3Fa99A148fA48D14Ed51d610c367C61876997F1', // mai
-    '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // usdc
     '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', // quickswap router
     '0x5ab5C56B9db92Ba45a0B46a207286cD83C15C939', // curve zap
     '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
@@ -100,6 +97,14 @@ await treasury.connect(multisig).toggle(6, lpConverter.address, zeroAddress)
 //   .connect(multisig)
 //   .toggle(5, USDCMAI, addresses.CLAM_BONDING_CALC_ADDRESS)
 
+let qi = await ethers.getContractAt(
+  'IERC20',
+  '0x580A84C73811E1839F75d86d75d88cCa0c241fF4'
+)
+let wmatic = await ethers.getContractAt(
+  'IERC20',
+  '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270'
+)
 let lp = await ethers.getContractAt('IERC20', USDCMAI)
 let usdc = await ethers.getContractAt('IERC20', USDC)
 let mai = await ethers.getContractAt('IERC20', addresses.MAI_ADDRESS)
