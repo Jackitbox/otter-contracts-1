@@ -64,10 +64,11 @@ contract OtterBuybacker is Ownable {
     /// @notice Buy back CLAM using treasury
     /// @param path_ the exhcnage path for buyback, first token must in treasury
     /// @param amount_ the amount in path_[0]
-    function buyback(address[] memory path_, uint256 amount_)
-        external
-        onlyOwner
-    {
+    function buyback(
+        address[] memory path_,
+        uint256 amount_,
+        uint256 amountOutMin_
+    ) external onlyOwner {
         IERC20 token = IERC20(path_[0]);
         treasury.manage(path_[0], amount_);
 
@@ -79,7 +80,7 @@ contract OtterBuybacker is Ownable {
         path[path_.length] = clam;
         uint256[] memory amounts = router.swapExactTokensForTokens(
             amount_,
-            0,
+            amountOutMin_,
             path,
             address(this),
             block.timestamp
@@ -95,7 +96,9 @@ contract OtterBuybacker is Ownable {
     function removeLiquidity(
         address router_,
         address lp_,
-        uint256 liquidity_
+        uint256 liquidity_,
+        uint256 amountAMin_,
+        uint256 amountBMin_
     ) external onlyOwner {
         treasury.manage(lp_, liquidity_);
 
@@ -107,8 +110,8 @@ contract OtterBuybacker is Ownable {
             pair.token0(),
             pair.token1(),
             liquidity_,
-            0,
-            0,
+            amountAMin_,
+            amountBMin_,
             address(this),
             block.timestamp
         );
