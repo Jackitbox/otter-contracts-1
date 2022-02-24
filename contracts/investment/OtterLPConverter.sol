@@ -4,12 +4,12 @@ pragma solidity 0.7.5;
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
 import '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol';
 
-import './interfaces/IOtterTreasury.sol';
+import '../interfaces/IOtterTreasury.sol';
 
-import './types/Ownable.sol';
-import './types/ERC20.sol';
+import '../types/Ownable.sol';
+import '../types/ERC20.sol';
 
-import './libraries/SafeMath.sol';
+import '../libraries/SafeMath.sol';
 
 interface CurveZapDepositor {
     function exchange_underlying(

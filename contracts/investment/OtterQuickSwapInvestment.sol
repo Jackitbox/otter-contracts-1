@@ -3,13 +3,13 @@ pragma solidity 0.7.5;
 
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 
-import './interfaces/IOtterTreasury.sol';
-import './interfaces/IProxyUniswapV2Pair.sol';
+import '../interfaces/IOtterTreasury.sol';
+import '../interfaces/IProxyUniswapV2Pair.sol';
 
-import './types/Ownable.sol';
-import './types/ERC20.sol';
+import '../types/Ownable.sol';
+import '../types/ERC20.sol';
 
-import './libraries/SafeMath.sol';
+import '../libraries/SafeMath.sol';
 
 interface IStakingRewards {
     // Views
