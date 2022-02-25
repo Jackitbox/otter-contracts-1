@@ -35,8 +35,12 @@ interface IERC20 {
     ) external returns (bool);
 }
 
-interface IERC20Mintable {
+interface IERC20Mintable is IERC20 {
     function mint(uint256 amount_) external;
 
     function mint(address account_, uint256 ammount_) external;
+}
+
+interface IERC20Burnable is IERC20 {
+    function burn(address account_, uint256 ammount_) external;
 }
