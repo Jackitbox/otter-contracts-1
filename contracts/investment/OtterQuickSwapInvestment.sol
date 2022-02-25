@@ -7,7 +7,7 @@ import '../interfaces/IOtterTreasury.sol';
 import '../interfaces/IProxyUniswapV2Pair.sol';
 
 import '../types/Ownable.sol';
-import '../types/ERC20.sol';
+import '../types/ERC20Permit.sol';
 
 import '../libraries/SafeMath.sol';
 
