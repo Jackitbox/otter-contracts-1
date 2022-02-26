@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity 0.7.5;
+pragma solidity 0.8.9;
+
+import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '../interfaces/IDelegation.sol';
 import '../interfaces/IOtterClamQi.sol';
+import '../interfaces/IERC20.sol';
 
-import '../types/Ownable.sol';
-import '../types/ERC20.sol';
-
-import '../libraries/SafeMath.sol';
-
-abstract contract LockerOwned is Ownable {
+abstract contract LockerOwned is OwnableUpgradeable {
     event ToggleLocker(address indexed locker, bool toggle);
 
     mapping(address => bool) public lockers;
@@ -42,28 +42,34 @@ interface EQi {
     function emergencyExit() external;
 }
 
-contract OtterClamQi is IOtterClamQi, ERC20, LockerOwned {
-    using SafeMath for uint256;
-
+contract OtterClamQi is
+    IOtterClamQi,
+    ERC20Upgradeable,
+    LockerOwned,
+    UUPSUpgradeable
+{
     event Lock(address indexed receipt, uint256 amount, uint256 blockNumber);
     event Leave(address indexed receipt, uint256 amount);
     event CollectReward(address indexed receipt, uint256 amount);
 
-    IERC20 public immutable qi;
-    EQi public immutable eQi;
-    address public immutable dao;
+    IERC20 public qi;
+    EQi public eQi;
+    address public dao;
+    uint256 _maxLock;
+    bool public burnEnabled;
 
-    uint256 _maxLock = 60108430;
-    bool public burnEnabled = false;
-
-    constructor(
+    function initialize(
         address qi_,
         address eQi_,
         address dao_
-    ) ERC20('OtterClam Qi', 'ocQi', 18) {
+    ) public initializer {
+        __ERC20_init('OtterClam Qi', 'ocQi');
+        __Ownable_init();
         qi = IERC20(qi_);
         eQi = EQi(eQi_);
         dao = dao_;
+        _maxLock = 60108430;
+        burnEnabled = false;
     }
 
     function maxLock() external view override returns (uint256) {
@@ -144,4 +150,6 @@ contract OtterClamQi is IOtterClamQi, ERC20, LockerOwned {
         uint256 balance = IERC20(token_).balanceOf(address(this));
         IERC20(token_).transfer(dao, balance);
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 }

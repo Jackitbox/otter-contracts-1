@@ -1,32 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity 0.7.5;
+pragma solidity 0.8.9;
+
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '../interfaces/IOtterTreasury.sol';
 import '../interfaces/IERC20.sol';
 import '../interfaces/IOtterClamQi.sol';
 
-import '../types/Ownable.sol';
-
-import '../libraries/SafeMath.sol';
-
-contract OtterQiLocker is Ownable {
-    using SafeMath for uint256;
-
+contract OtterQiLocker is OwnableUpgradeable, UUPSUpgradeable {
     event Lock(uint256 amount, uint256 blockNumber);
     event Leave(uint256 amount);
     event Harvest(uint256 amount);
 
-    IERC20 public immutable qi;
-    IOtterClamQi public immutable ocQi;
-    IOtterTreasury public immutable treasury;
-    address public immutable dao;
+    IERC20 public qi;
+    IOtterClamQi public ocQi;
+    IOtterTreasury public treasury;
+    address public dao;
 
-    constructor(
+    function initialize(
         address qi_,
         address ocQi_,
         address treasury_,
         address dao_
-    ) {
+    ) public initializer {
         qi = IERC20(qi_);
         ocQi = IOtterClamQi(ocQi_);
         treasury = IOtterTreasury(treasury_);
@@ -67,4 +64,6 @@ contract OtterQiLocker is Ownable {
         uint256 balance = IERC20(token_).balanceOf(address(this));
         IERC20(token_).transfer(dao, balance);
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 }
