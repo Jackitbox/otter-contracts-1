@@ -8,7 +8,9 @@ import '../interfaces/IOtterTreasury.sol';
 import '../interfaces/IERC20.sol';
 import '../interfaces/IOtterClamQi.sol';
 
-contract OtterQiLocker is OwnableUpgradeable, UUPSUpgradeable {
+import '../types/LockerOwnedUpgradeable.sol';
+
+contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
     event Lock(uint256 amount, uint256 blockNumber);
     event Leave(uint256 amount);
     event Harvest(uint256 amount);
@@ -24,6 +26,7 @@ contract OtterQiLocker is OwnableUpgradeable, UUPSUpgradeable {
         address treasury_,
         address dao_
     ) public initializer {
+        __Ownable_init();
         qi = IERC20(qi_);
         ocQi = IOtterClamQi(ocQi_);
         treasury = IOtterTreasury(treasury_);
@@ -33,7 +36,7 @@ contract OtterQiLocker is OwnableUpgradeable, UUPSUpgradeable {
     /// @notice Lock Qi to QiDAO and mint ocQi to treasury
     /// @param amount_ the amount of qi
     /// @param blockNumber_ the block number going to locked
-    function lock(uint256 amount_, uint256 blockNumber_) public onlyOwner {
+    function lock(uint256 amount_, uint256 blockNumber_) public onlyLocker {
         treasury.manage(address(qi), amount_);
         qi.approve(address(ocQi), amount_);
         ocQi.lock(address(treasury), amount_, blockNumber_);
@@ -41,7 +44,7 @@ contract OtterQiLocker is OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /// @notice Unlock Qi from QiDAO and burn ocQi
-    function unlock() external onlyOwner {
+    function unlock() external onlyLocker {
         uint256 treasuryAmount = IERC20(address(ocQi)).balanceOf(
             address(treasury)
         );
@@ -52,7 +55,7 @@ contract OtterQiLocker is OwnableUpgradeable, UUPSUpgradeable {
 
     /// @notice Harvest reward from QiDAO
     /// @param blockNumber_ the block number going to locked, if = 0, no lock
-    function harvest(uint256 blockNumber_) external {
+    function harvest(uint256 blockNumber_) external onlyLocker {
         uint256 rewards = ocQi.collectReward(address(treasury));
         if (blockNumber_ > 0) {
             lock(rewards, blockNumber_);
