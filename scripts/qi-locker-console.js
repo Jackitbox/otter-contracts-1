@@ -59,16 +59,16 @@ const QI = '0x580A84C73811E1839F75d86d75d88cCa0c241fF4'
 
 let OtterClamQi = await ethers.getContractFactory('OtterClamQi')
 let ocQi = await OtterClamQi.deploy(
-  QI,
-  EQI,
-  '0x929A27c46041196e1a49C7B459d63eC9A20cd879'
+  '0x580A84C73811E1839F75d86d75d88cCa0c241fF4', // qi
+  '0x880decade22ad9c58a8a4202ef143c4f305100b3', // eQi
+  '0x929A27c46041196e1a49C7B459d63eC9A20cd879' // dao
 )
 let OtterQiLocker = await ethers.getContractFactory('OtterQiLocker')
 let qiLocker = await OtterQiLocker.deploy(
-  QI,
+  '0x580A84C73811E1839F75d86d75d88cCa0c241fF4', // qi
   ocQi.address,
-  addresses.TREASURY_ADDRESS,
-  dao
+  '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
+  '0x929A27c46041196e1a49C7B459d63eC9A20cd879' // dao
 )
 
 let treasury = await ethers.getContractAt(
@@ -113,11 +113,10 @@ await qiLocker.lock(ethers.utils.parseEther('100'), '60108430')
 // }
 
 await hre.run('verify:verify', {
-  address: investment.address,
+  address: ocQi.address,
   constructorArguments: [
-    '0x9a8b2601760814019b7e6ee0052e25f1c623d1e6', // QI-WMATIC
-    QI, // qi token
-    QIDAO, // QiDAO farm
-    '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
+    '0x580A84C73811E1839F75d86d75d88cCa0c241fF4', // qi
+    '0x880decade22ad9c58a8a4202ef143c4f305100b3', // eQi
+    '0x929A27c46041196e1a49C7B459d63eC9A20cd879', // dao
   ],
 })
