@@ -27,7 +27,7 @@ contract OtterStakingPearlHelper {
         PEARL = IPearlERC20(_PEARL);
     }
 
-    function stake(uint256 _amount) external {
+    function stake(uint256 _amount) external returns (uint256) {
         CLAM.transferFrom(msg.sender, address(this), _amount);
         CLAM.approve(address(staking), _amount);
         staking.stake(_amount, address(this));
@@ -35,13 +35,15 @@ contract OtterStakingPearlHelper {
         sCLAM.approve(address(PEARL), _amount);
         uint256 pearlAmount = PEARL.wrap(_amount);
         PEARL.transfer(msg.sender, pearlAmount);
+        return pearlAmount;
     }
 
-    function unstake(uint256 _amount) external {
+    function unstake(uint256 _amount) external returns (uint256) {
         PEARL.transferFrom(msg.sender, address(this), _amount);
-        uint256 sCLAMAmount = PEARL.unwrap(_amount);
-        sCLAM.approve(address(staking), sCLAMAmount);
-        staking.unstake(sCLAMAmount, true);
-        CLAM.transfer(msg.sender, sCLAMAmount);
+        uint256 clamAmount = PEARL.unwrap(_amount);
+        sCLAM.approve(address(staking), clamAmount);
+        staking.unstake(clamAmount, true);
+        CLAM.transfer(msg.sender, clamAmount);
+        return clamAmount;
     }
 }

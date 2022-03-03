@@ -50,8 +50,8 @@ const StakingPearlHelper = await ethers.getContractFactory(
   'OtterStakingPearlHelper'
 )
 let stakingPearlHelper = await StakingPearlHelper.deploy(
-  staking.address,
-  clam.address,
-  addresses.sCLAM_ADDRESS,
-  addresses.PEARL_ADDRESS
+  '0xC8B0243F350AA5F8B979b228fAe522DAFC61221a',
+  '0xC250e9987A032ACAC293d838726C511E6E1C029d',
+  '0xAAc144Dc08cE39Ed92182dd85ded60E5000C9e67',
+  '0x52A7F40BB6e9BD9183071cdBdd3A977D713F2e34'
 )
