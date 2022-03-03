@@ -138,7 +138,7 @@ contract OtterStaking is Ownable, IOtterStaking {
         @param _amount uint
         @param _trigger bool
      */
-    function unstake(uint256 _amount, bool _trigger) external {
+    function unstake(uint256 _amount, bool _trigger) external override {
         if (_trigger) {
             rebase();
         }
