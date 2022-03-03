@@ -5,4 +5,6 @@ interface IOtterStaking {
     function stake(uint256 _amount, address _recipient) external returns (bool);
 
     function claim(address _recipient) external;
+
+    function unstake(uint256 _amount, bool _trigger) external;
 }
