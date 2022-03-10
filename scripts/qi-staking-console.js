@@ -47,49 +47,32 @@ let deployer = await ethers.getSigner(
 
 await hre.network.provider.request({
   method: 'hardhat_impersonateAccount',
-  params: ['0x3FEACf904b152b1880bDE8BF04aC9Eb636fEE4d8'],
+  params: ['0x8565faab405b06936014c8b6bd5ab60376cc051b'],
 })
-let qiOwner = await ethers.getSigner(
-  '0x3FEACf904b152b1880bDE8BF04aC9Eb636fEE4d8'
+let lpHolder = await ethers.getSigner(
+  '0x8565faab405b06936014c8b6bd5ab60376cc051b'
 )
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
-const EQI = '0x880decade22ad9c58a8a4202ef143c4f305100b3'
 const QI = '0x580A84C73811E1839F75d86d75d88cCa0c241fF4'
+const MAI3POOL = '0x447646e84498552e62ecf097cc305eabfff09308'
 
-// let OtterClamQi = await ethers.getContractFactory('OtterClamQi')
-// let ocQi = await OtterClamQi.deploy(
-//   '0x580A84C73811E1839F75d86d75d88cCa0c241fF4', // qi
-//   '0x880decade22ad9c58a8a4202ef143c4f305100b3', // eQi
-//   '0x929A27c46041196e1a49C7B459d63eC9A20cd879' // dao
-// )
-// let OtterQiLocker = await ethers.getContractFactory('OtterQiLocker')
-// let qiLocker = await OtterQiLocker.deploy(
-//   '0x580A84C73811E1839F75d86d75d88cCa0c241fF4', // qi
-//   ocQi.address,
-//   '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C', // treasury
-//   '0x929A27c46041196e1a49C7B459d63eC9A20cd879' // dao
-// )
+let lp = await ethers.getContractAt('IERC20', MAI3POOL)
 
-let qiLocker = await ethers.getContractAt(
-  'OtterQiLocker',
-  '0x69f6c4fa150f9f0b3037612cf8faddaedbd46bb8'
+let qiFarm = await ethers.getContractAt(
+  'IQiFarm',
+  '0x0635af5ab29fc7bba007b8cebad27b7a3d3d1958'
 )
-let ocQi = await ethers.getContractAt(
-  'OtterClamQi',
-  '0x0906ee253B2cD6737A3CD3838490Cb0b90fD68be'
+let staking = await ethers.getContractAt(
+  'OtterQiDAOCurveStaking',
+  '0xA4a75B3f3e957222E0d67Ea8b643F137BDFCe03B'
 )
 let qi = await ethers.getContractAt('IERC20', QI)
-let eQi = new ethers.Contract(
-  EQI,
-  require('./scripts/abi/eQi'),
-  ethers.provider
-)
 
-// let treasury = await ethers.getContractAt(
-//   'OtterTreasury',
-//   addresses.TREASURY_ADDRESS
-// )
+let treasury = await ethers.getContractAt(
+  'OtterTreasury',
+  addresses.TREASURY_ADDRESS
+)
 // await deployer.sendTransaction({
 //   value: ethers.utils.parseEther('10'),
 //   to: multisig.address,
