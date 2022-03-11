@@ -3,6 +3,7 @@ pragma solidity 0.8.9;
 
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol';
 
 import '../interfaces/IOtterTreasury.sol';
 import '../interfaces/IERC20.sol';
@@ -61,6 +62,31 @@ contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
             lock(rewards, blockNumber_);
         }
         emit Harvest(rewards);
+    }
+
+    address public constant QuickSwapRouter =
+        0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff;
+
+    function convertToQI(
+        address[] memory path_,
+        uint256 amountIn_,
+        uint256 amountOutMin_
+    ) external onlyLocker {
+        address source = path_[0];
+        treasury.manage(source, amountIn_);
+        address[] memory path = new address[](path_.length + 1);
+        for (uint256 i = 0; i < path_.length; i++) {
+            path[i] = path_[i];
+        }
+        path[path_.length] = address(qi);
+        IERC20(source).approve(QuickSwapRouter, amountIn_);
+        IUniswapV2Router02(QuickSwapRouter).swapExactTokensForTokens(
+            amountIn_,
+            amountOutMin_,
+            path,
+            address(treasury),
+            block.timestamp
+        );
     }
 
     function emergencyWithdraw(address token_) external onlyOwner {
