@@ -30,7 +30,6 @@ let addresses = {
 }
 
 const dao = '0x929A27c46041196e1a49C7B459d63eC9A20cd879'
-
 await hre.network.provider.request({
   method: 'hardhat_impersonateAccount',
   params: [dao],
@@ -56,27 +55,40 @@ let lpHolder = await ethers.getSigner(
 const zeroAddress = '0x0000000000000000000000000000000000000000'
 const QI = '0x580A84C73811E1839F75d86d75d88cCa0c241fF4'
 const MAI3POOL = '0x447646e84498552e62ecf097cc305eabfff09308'
+const QUICK_ROUTER = '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff'
 
-let lp = await ethers.getContractAt('IERC20', MAI3POOL)
-
+let curveLp = await ethers.getContractAt(
+  'IERC20',
+  '0x447646e84498552e62ecf097cc305eabfff09308'
+)
+let quickLp = await ethers.getContractAt(
+  'IERC20',
+  '0x160532D2536175d65C03B97b0630A9802c274daD'
+)
 let qiFarm = await ethers.getContractAt(
   'IQiFarm',
-  '0x0635af5ab29fc7bba007b8cebad27b7a3d3d1958'
+  '0x574fe4e8120c4da1741b5fd45584de7a5b521f0f'
 )
-let staking = await ethers.getContractAt(
-  'OtterQiDAOCurveStaking',
-  '0xA4a75B3f3e957222E0d67Ea8b643F137BDFCe03B'
+let qiInvestment = await ethers.getContractAt(
+  'OtterQiDAOInvestment',
+  '0x07DB6BFbD71E9DE0AfF3ab3eAe4CBC7B13EEF952'
 )
-let qi = await ethers.getContractAt('IERC20', QI)
-
+let qi = await ethers.getContractAt(
+  'IERC20',
+  '0x580A84C73811E1839F75d86d75d88cCa0c241fF4'
+)
 let treasury = await ethers.getContractAt(
   'OtterTreasury',
-  addresses.TREASURY_ADDRESS
+  '0x8ce47D56EAa1299d3e06FF3E04637449fFb01C9C'
 )
-// await deployer.sendTransaction({
-//   value: ethers.utils.parseEther('10'),
-//   to: multisig.address,
-// })
+let quickRouter = await ethers.getContractAt(
+  'IUniswapV2Router',
+  '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff'
+)
+await deployer.sendTransaction({
+  value: ethers.utils.parseEther('3'),
+  to: multisig.address,
+})
 
 // await treasury.connect(multisig).queue(2, ocQi.address) // reserve token
 // await treasury.connect(multisig).queue(3, qiLocker.address) // reserve manager

@@ -5,32 +5,13 @@ import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 
 import '../interfaces/IOtterTreasury.sol';
 import '../interfaces/IProxyUniswapV2Pair.sol';
+import '../interfaces/IQiFarm.sol';
 
 import '../types/Ownable.sol';
 import '../types/ERC20Permit.sol';
 
 import '../libraries/SafeMath.sol';
 import '../libraries/SafeERC20.sol';
-
-interface IQiFarm {
-    // View function to see deposited LP for a user.
-    function deposited(uint256 _pid, address _user)
-        external
-        view
-        returns (uint256);
-
-    // View function to see pending ERC20s for a user.
-    function pending(uint256 _pid, address _user)
-        external
-        view
-        returns (uint256);
-
-    // Deposit LP tokens to Farm for ERC20 allocation.
-    function deposit(uint256 _pid, uint256 _amount) external;
-
-    // Withdraw LP tokens from Farm.
-    function withdraw(uint256 _pid, uint256 _amount) external;
-}
 
 contract OtterQiDAOInvestment is ERC20Permit, Ownable, IProxyUniswapV2Pair {
     using SafeMath for uint256;
