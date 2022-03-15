@@ -59,7 +59,7 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         string memory symbol_,
         uint256 maxBatchSize_,
         uint256 collectionSize_
-    ) public override initializer {
+    ) public virtual override initializer {
         ERC721AUpgradeable.initialize(
             name_,
             symbol_,
@@ -98,7 +98,7 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         address to_,
         uint256 quantity_,
         uint256[] memory arrTraits_
-    ) external override onlyOperator nonZeroAddress(to_) {
+    ) external virtual override onlyOperator nonZeroAddress(to_) {
         require(arrTraits_.length == quantity_, 'invalid traits length');
 
         _safeMint(to_, quantity_);
@@ -124,13 +124,14 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         _baseTokenURI = baseURI;
     }
 
-    function _baseURI() internal view override returns (string memory) {
+    function _baseURI() internal view virtual override returns (string memory) {
         return _baseTokenURI;
     }
 
     function get(uint256 tokenId_)
         external
         view
+        virtual
         validOttoId(tokenId_)
         returns (
             string memory name_,
