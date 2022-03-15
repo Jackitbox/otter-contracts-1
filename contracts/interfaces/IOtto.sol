@@ -5,7 +5,7 @@ interface IOtto {
     function setBaseURI(string calldata baseURI) external;
 
     function mint(
-        address receipt_,
+        address to_,
         uint256 quantity_,
         uint256[] memory arrTraits_
     ) external;

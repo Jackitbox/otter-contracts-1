@@ -70,6 +70,14 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         _setupRole(OPERATOR_ROLE, _msgSender());
     }
 
+    function grantOperator(address operator_) public onlyAdmin {
+        _setupRole(OPERATOR_ROLE, operator_);
+    }
+
+    function revokeOperator(address operator_) public onlyAdmin {
+        _revokeRole(OPERATOR_ROLE, operator_);
+    }
+
     function setName(uint256 tokenId_, string memory name_)
         external
         validOttoId(tokenId_)
@@ -87,13 +95,13 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
     }
 
     function mint(
-        address receipt_,
+        address to_,
         uint256 quantity_,
         uint256[] memory arrTraits_
-    ) external override onlyOperator nonZeroAddress(receipt_) {
+    ) external override onlyOperator nonZeroAddress(to_) {
         require(arrTraits_.length == quantity_, 'invalid traits length');
 
-        _safeMint(receipt_, quantity_);
+        _safeMint(to_, quantity_);
         for (uint256 i = 0; i < quantity_; i++) {
             infos.push(
                 OttoInfo({
