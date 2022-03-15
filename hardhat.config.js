@@ -54,9 +54,6 @@ module.exports = {
     hardhat: {
       chainId,
       gas: 'auto',
-      accounts: [
-        { privateKey: deployer, balance: '1000000000000000000000000' },
-      ],
       forking:
         process.env.NODE_ENV === 'test'
           ? undefined
