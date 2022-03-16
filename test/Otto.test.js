@@ -1,5 +1,6 @@
 const { ethers, upgrades } = require('hardhat')
 const { expect } = require('chai')
+const { smock } = require('@defi-wonderland/smock')
 
 describe('Otto', function () {
   let deployer, badguy, otto, dao
@@ -133,16 +134,22 @@ describe('Otto', function () {
     })
   })
 
-  describe('OttoPrimaryMarket', function () {
+  describe.only('OttoPrimaryMarket', function () {
     let mkt, weth, clam
 
     beforeEach(async function () {
-      const DAI = await ethers.getContractFactory('DAI')
-      const CLAM = await ethers.getContractFactory('OtterClamERC20V2')
+      const CLAM = await smock.mock('OtterClamERC20V2')
       const MKT = await ethers.getContractFactory('OttoPrimaryMarket')
+
       clam = await CLAM.deploy()
       await clam.setVault(deployer.address)
-      weth = await DAI.deploy(0)
+
+      weth = await CLAM.deploy()
+      await weth.setVariable('_name', 'wrapped ether')
+      await weth.setVariable('_symbol', 'WETH')
+      await weth.setVariable('_decimals', 18)
+      await weth.setVault(deployer.address)
+
       mkt = await upgrades.deployProxy(MKT, [
         otto.address,
         weth.address,

@@ -2,13 +2,13 @@
 pragma solidity 0.8.9;
 
 import './interfaces/IOtto.sol';
+import './interfaces/IERC20.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol';
 
 contract OttoPrimaryMarket is OwnableUpgradeable {
     IOtto public OTTO;
-    IERC20MetadataUpgradeable public WETH;
-    IERC20MetadataUpgradeable public CLAM;
+    IERC20 public WETH;
+    IERC20 public CLAM;
     address public dao;
 
     uint256[] public traitsPool;
@@ -64,8 +64,8 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     ) public initializer {
         __Ownable_init();
         OTTO = IOtto(otto_);
-        WETH = IERC20MetadataUpgradeable(weth_);
-        CLAM = IERC20MetadataUpgradeable(clam_);
+        WETH = IERC20(weth_);
+        CLAM = IERC20(clam_);
         dao = dao_;
     }
 
@@ -121,10 +121,8 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     }
 
     function emergencyWithdraw(address token_) external onlyOwner {
-        uint256 balance = IERC20MetadataUpgradeable(token_).balanceOf(
-            address(this)
-        );
-        IERC20MetadataUpgradeable(token_).transfer(dao, balance);
+        uint256 balance = IERC20(token_).balanceOf(address(this));
+        IERC20(token_).transfer(dao, balance);
     }
 
     // FIXME: use chainlink vrf
