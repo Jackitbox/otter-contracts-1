@@ -1,14 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.9;
 
+// import 'hardhat/console.sol';
 import './interfaces/IOtto.sol';
 import './interfaces/IERC20.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
+
+interface IEACAggregatorProxy {
+    function latestAnswer() external view returns (int256);
+
+    function decimals() external view returns (uint8);
+}
 
 contract OttoPrimaryMarket is OwnableUpgradeable {
     IOtto public OTTO;
     IERC20 public WETH;
     IERC20 public CLAM;
+    IERC20 public MAI;
+    IUniswapV2Pair public MAICLAM;
+    IEACAggregatorProxy wethPriceFeed;
     address public dao;
 
     uint256[] public traitsPool;
@@ -59,13 +70,17 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     function initialize(
         address otto_,
         address weth_,
-        address clam_,
+        address maiclam_,
+        address wethPriceFeed_,
         address dao_
     ) public initializer {
         __Ownable_init();
         OTTO = IOtto(otto_);
         WETH = IERC20(weth_);
-        CLAM = IERC20(clam_);
+        MAICLAM = IUniswapV2Pair(maiclam_);
+        MAI = IERC20(MAICLAM.token0());
+        CLAM = IERC20(MAICLAM.token1());
+        wethPriceFeed = IEACAggregatorProxy(wethPriceFeed_);
         dao = dao_;
     }
 
@@ -98,19 +113,37 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         }
     }
 
-    function payAndDistribute(uint256 price_, bool payInCLAM) private {}
+    function _payAndDistribute(
+        uint256 quantity_,
+        uint256 maxPrice_,
+        bool payInCLAM
+    ) private {
+        if (payInCLAM) {
+            uint256 needed_ = priceInCLAM() * quantity_;
+            // console.log('needed %s, maxPrice %s', needed_, maxPrice_);
+            require(needed_ <= maxPrice_, 'price too low');
+            CLAM.transferFrom(msg.sender, address(this), needed_);
+            // TODO: distribute
+        } else {
+            uint256 needed_ = priceInWETH() * quantity_;
+            // console.log('needed %s, maxPrice %s', needed_, maxPrice_);
+            require(needed_ <= maxPrice_, 'price too low');
+            WETH.transferFrom(msg.sender, address(this), needed_);
+            // TODO: distribute
+        }
+    }
 
     function mint(
         address to_,
         uint256 quantity_,
-        uint256 price_,
+        uint256 maxPrice_,
         bool payInCLAM
     ) external callerIsUser quantityAllowedToMintOnEachStage(quantity_) {
-        payAndDistribute(price_, payInCLAM);
+        _payAndDistribute(quantity_, maxPrice_, payInCLAM);
         uint256[] memory arrTraits = new uint256[](quantity_);
         for (uint256 i = 0; i < quantity_; i++) {
             uint256 size = totalSupply();
-            uint256 choosed = rand(size);
+            uint256 choosed = _rand(size);
             arrTraits[i] = traitsPool[choosed];
             traitsPool[choosed] = traitsPool[size - 1];
             traitsPool.pop();
@@ -126,7 +159,7 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     }
 
     // FIXME: use chainlink vrf
-    function rand(uint256 n) private view returns (uint256) {
+    function _rand(uint256 n) private view returns (uint256) {
         // sha3 and now have been deprecated
         return
             uint256(
@@ -140,17 +173,50 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         return traitsPool.length;
     }
 
-    function priceInWETH() public view returns (uint256) {
+    function priceInWETH() public view returns (uint256 price_) {
         if (saleStage == SALE_STAGE.PRE_SALE) {
-            return 6 * 10**17; // 0.6 ETH
+            price_ = 6 * 10**16; // 0.06 ETH
         } else {
-            return 8 * 10**17; // 0.8 ETH
+            price_ = 8 * 10**16; // 0.08 ETH
         }
     }
 
-    // FIXME: calculate price in CLAM using CLAM-MAI uniswap pair
-    function priceInCLAM() public view returns (uint256) {
-        return (priceInWETH() * CLAM.decimals()) / WETH.decimals();
+    function priceInCLAM() public view returns (uint256 price_) {
+        // mai decimals = 18
+        // usd decimals = 8
+        // clam decimals = 9
+        // assume 1 USD = 1 MAI
+        // 1 CLAM = x MAI
+        // 1 WETH = y USD = y/x CLAM
+        uint256 usdPerWETH = uint256(wethPriceFeed.latestAnswer()); // 10**6
+        // console.log('usdPerWETH %s', usdPerWETH);
+        uint256 maiPerCLAM = _maiPerCLAM();
+        // console.log('maiPerCLAM %s', maiPerCLAM);
+        uint256 clamPerWETH = (_valueOf(usdPerWETH, wethPriceFeed.decimals()) *
+            10**CLAM.decimals()) / _valueOf(maiPerCLAM, MAI.decimals());
+        // console.log('clamPerWETH %s', clamPerWETH);
+
+        price_ = (priceInWETH() * clamPerWETH) / 10**WETH.decimals();
+        // console.log('price in clam: %s', price_);
+        // 30% off
+        price_ = discountPrice(price_, 3000);
+        // console.log('price with discount in clam: %s', price_);
+    }
+
+    function _maiPerCLAM() private view returns (uint256 price_) {
+        (uint256 reserveMAI, uint256 reserveCLAM, ) = MAICLAM.getReserves();
+        // console.log('reserveMAI %s, reserveCLAM %s', reserveMAI, reserveCLAM);
+        price_ =
+            (_valueOf(reserveMAI, MAI.decimals()) * 10**MAI.decimals()) /
+            _valueOf(reserveCLAM, CLAM.decimals());
+    }
+
+    function _valueOf(uint256 amount_, uint8 decimals_)
+        private
+        pure
+        returns (uint256)
+    {
+        return (amount_ * 10**18) / 10**decimals_;
     }
 
     /**
