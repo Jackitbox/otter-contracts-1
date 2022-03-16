@@ -164,6 +164,6 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         pure
         returns (uint256)
     {
-        return (price_ * (100000 - discount_)) / 100000;
+        return (price_ * (10000 - discount_)) / 10000;
     }
 }
