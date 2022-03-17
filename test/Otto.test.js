@@ -300,16 +300,23 @@ describe('Otto', function () {
     })
 
     describe('ANY_STAGE', function () {
-      it('should fail to give otto away by badguy', async function () {
+      it('should fail to give otto away if caller is not owner', async function () {
         await expect(
           portalCreator.connect(badguy).giveaway(dao.address, 1)
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
-      it('should able to give otto away', async function () {
-        await expect(() =>
-          portalCreator.giveaway(dao.address, 1)
-        ).to.changeTokenBalance(otto, dao, 1)
+      it.only('should fail to give 0 otto away', async function () {
+        await expect(portalCreator.giveaway(dao.address, 0)).to.be.revertedWith(
+          'giveaway quantity must be greater than 0'
+        )
+      })
+      ;[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].forEach(function (amount) {
+        it.only(`should be able to give ${amount} ottos away`, async function () {
+          await expect(() =>
+            portalCreator.giveaway(dao.address, amount)
+          ).to.changeTokenBalance(otto, dao, amount)
+        })
       })
 
       it('should fail to setOttolisted if caller is not owner', async function () {
@@ -522,7 +529,7 @@ describe('Otto', function () {
         )
       })
       ;[1, 2, 3, 4, 5, 6].forEach(function (quantity) {
-        it(`should able to mint ${quantity} otto in weth`, async function () {
+        it(`should able to mint ${quantity} ottos in weth`, async function () {
           const price = (await portalCreator.priceInWETH()).mul(quantity)
           await weth.mint(deployer.address, price)
           await weth.approve(portalCreator.address, price)
@@ -540,7 +547,7 @@ describe('Otto', function () {
         })
       })
       ;[1, 2, 3, 4, 5, 6].forEach(function (quantity) {
-        it(`should able to mint ${quantity} otto in clam`, async function () {
+        it(`should able to mint ${quantity} ottos in clam`, async function () {
           const price = (await portalCreator.priceInWETH()).mul(quantity)
           await clam.mint(deployer.address, price)
           await clam.approve(portalCreator.address, price)

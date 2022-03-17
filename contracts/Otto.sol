@@ -136,6 +136,27 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         }
     }
 
+    function set(
+        uint256 tokenId_,
+        uint256 birthday_,
+        uint256 traits_,
+        uint256 level_,
+        uint256 experiences_,
+        uint256 hungerValue_,
+        uint256 friendship_,
+        int16[NUM_ATTRIBUTES] memory attributes_,
+        int16[NUM_ATTRIBUTES] memory attributeBonuses_
+    ) external virtual onlyManager validOttoId(tokenId_) {
+        infos[tokenId_].birthday = birthday_;
+        infos[tokenId_].traits = traits_;
+        infos[tokenId_].level = level_;
+        infos[tokenId_].experiences = experiences_;
+        infos[tokenId_].hungerValue = hungerValue_;
+        infos[tokenId_].friendship = friendship_;
+        infos[tokenId_].attributes = attributes_;
+        infos[tokenId_].attributeBonuses = attributeBonuses_;
+    }
+
     function setBaseURI(string calldata baseURI) external onlyAdmin {
         _baseTokenURI = baseURI;
     }
@@ -175,25 +196,12 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         attributeBonuses_ = otto.attributeBonuses;
     }
 
-    function set(
-        uint256 tokenId_,
-        uint256 birthday_,
-        uint256 traits_,
-        uint256 level_,
-        uint256 experiences_,
-        uint256 hungerValue_,
-        uint256 friendship_,
-        int16[NUM_ATTRIBUTES] memory attributes_,
-        int16[NUM_ATTRIBUTES] memory attributeBonuses_
-    ) external virtual onlyManager validOttoId(tokenId_) {
-        infos[tokenId_].birthday = birthday_;
-        infos[tokenId_].traits = traits_;
-        infos[tokenId_].level = level_;
-        infos[tokenId_].experiences = experiences_;
-        infos[tokenId_].hungerValue = hungerValue_;
-        infos[tokenId_].friendship = friendship_;
-        infos[tokenId_].attributes = attributes_;
-        infos[tokenId_].attributeBonuses = attributeBonuses_;
+    function totalMintable() external view virtual override returns (uint256) {
+        return collectionSize - totalSupply();
+    }
+
+    function maxBatch() external view virtual override returns (uint256) {
+        return maxBatchSize;
     }
 
     function supportsInterface(bytes4 interfaceId)

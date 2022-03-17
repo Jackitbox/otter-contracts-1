@@ -113,7 +113,18 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
     }
 
     function giveaway(address to_, uint256 quantity_) external onlyOwner {
-        OTTO.mint(to_, quantity_);
+        require(quantity_ > 0, 'giveaway quantity must be greater than 0');
+        require(quantity_ <= OTTO.totalMintable(), 'not enough tokens');
+
+        uint256 maxBatch = OTTO.maxBatch();
+        uint256 round = quantity_ / maxBatch;
+        uint256 remainder = quantity_ % maxBatch;
+        for (uint256 i = 0; i < round; i++) {
+            OTTO.mint(to_, maxBatch);
+        }
+        if (remainder > 0) {
+            OTTO.mint(to_, remainder);
+        }
     }
 
     function mint(
