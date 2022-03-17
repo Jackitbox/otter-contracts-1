@@ -13,7 +13,7 @@ interface IEACAggregatorProxy {
     function decimals() external view returns (uint8);
 }
 
-contract OttoPrimaryMarket is OwnableUpgradeable {
+contract OttopiaPortalCreator is OwnableUpgradeable {
     IOtto public OTTO;
     IERC20 public WETH;
     IERC20 public CLAM;

@@ -9,7 +9,7 @@ const {
 } = require('@uniswap/v2-core/build/UniswapV2Pair.json')
 const {
   abi: IEACAggregatorProxy,
-} = require('../artifacts/contracts/OttoPrimaryMarket.sol/IEACAggregatorProxy.json')
+} = require('../artifacts/contracts/OttopiaPortalCreator.sol/IEACAggregatorProxy.json')
 
 describe('Otto', function () {
   let deployer, badguy, otto, dao, treasury
@@ -254,13 +254,14 @@ describe('Otto', function () {
     })
   })
 
-  describe('OttoPrimaryMarket', function () {
-    let mkt, weth, clam, mai, maiclam, wethPriceFeed
+  describe('OttopiaPortalCreator', function () {
+    let portalCreator, weth, clam, mai, maiclam, wethPriceFeed
 
     beforeEach(async function () {
       const CLAM = await smock.mock('OtterClamERC20V2')
-      const MKT = await ethers.getContractFactory('OttoPrimaryMarket')
-      // const MKTv2 = await ethers.getContractFactory('OttoPrimaryMarketV2')
+      const PORTALCREATOR = await ethers.getContractFactory(
+        'OttopiaPortalCreator'
+      )
 
       clam = await CLAM.deploy()
       await clam.setVault(deployer.address)
@@ -286,7 +287,7 @@ describe('Otto', function () {
       wethPriceFeed.decimals.returns(8)
       wethPriceFeed.latestAnswer.returns(parseUnits('100', 8)) // 1 ETH = 100 USD = 50 CLAM
 
-      mkt = await upgrades.deployProxy(MKT, [
+      portalCreator = await upgrades.deployProxy(PORTALCREATOR, [
         otto.address,
         weth.address,
         maiclam.address,
@@ -294,108 +295,99 @@ describe('Otto', function () {
         treasury.address,
         dao.address,
       ])
-      await mkt.deployed()
-      await otto.grantMinter(mkt.address)
-      // mkt = await upgrades.upgradeProxy(mkt.address, MKTv2)
+      await portalCreator.deployed()
+      await otto.grantMinter(portalCreator.address)
     })
 
     describe('ANY_STAGE', function () {
       it('should fail to give otto away by badguy', async function () {
         await expect(
-          mkt.connect(badguy).giveaway(dao.address, 1)
+          portalCreator.connect(badguy).giveaway(dao.address, 1)
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('should able to give otto away', async function () {
-        await expect(() => mkt.giveaway(dao.address, 1)).to.changeTokenBalance(
-          otto,
-          dao,
-          1
-        )
+        await expect(() =>
+          portalCreator.giveaway(dao.address, 1)
+        ).to.changeTokenBalance(otto, dao, 1)
       })
 
       it('should fail to setOttolisted if caller is not owner', async function () {
         await expect(
-          mkt.connect(badguy).setOttolisted(1, [dao.address])
+          portalCreator.connect(badguy).setOttolisted(1, [dao.address])
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('should able to setOttolisted', async function () {
-        await mkt.setOttolisted(3, [dao.address])
-        expect(await mkt.ottolisted(dao.address)).to.eq(3)
+        await portalCreator.setOttolisted(3, [dao.address])
+        expect(await portalCreator.ottolisted(dao.address)).to.eq(3)
       })
 
       it('should fail to adjustPrice if caller is not owner', async function () {
         await expect(
-          mkt.connect(badguy).adjustPrice(0, 123)
+          portalCreator.connect(badguy).adjustPrice(0, 123)
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('should fail to stopSale if caller is not owner', async function () {
-        await expect(mkt.connect(badguy).stopSale()).to.be.revertedWith(
-          'Ownable: caller is not the owner'
-        )
+        await expect(
+          portalCreator.connect(badguy).stopSale()
+        ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('should fail to startPreSale if caller is not owner', async function () {
-        await expect(mkt.connect(badguy).startPreSale()).to.be.revertedWith(
-          'Ownable: caller is not the owner'
-        )
+        await expect(
+          portalCreator.connect(badguy).startPreSale()
+        ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('should fail to startPublicSale if caller is not owner', async function () {
-        await expect(mkt.connect(badguy).startPublicSale()).to.be.revertedWith(
-          'Ownable: caller is not the owner'
-        )
+        await expect(
+          portalCreator.connect(badguy).startPublicSale()
+        ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('should able to adjust price', async function () {
-        await mkt.adjustPrice(0, 123)
-        expect(await mkt.priceInWETH()).to.eq(123)
-        await mkt.startPreSale()
-        await mkt.adjustPrice(1, 456)
-        expect(await mkt.priceInWETH()).to.eq(456)
-        await mkt.startPublicSale()
-        await mkt.adjustPrice(2, 789)
-        expect(await mkt.priceInWETH()).to.eq(789)
-        await expect(mkt.adjustPrice(3, 123)).to.be.reverted
+        await portalCreator.adjustPrice(0, 123)
+        expect(await portalCreator.priceInWETH()).to.eq(123)
+        await portalCreator.startPreSale()
+        await portalCreator.adjustPrice(1, 456)
+        expect(await portalCreator.priceInWETH()).to.eq(456)
+        await portalCreator.startPublicSale()
+        await portalCreator.adjustPrice(2, 789)
+        expect(await portalCreator.priceInWETH()).to.eq(789)
+        await expect(portalCreator.adjustPrice(3, 123)).to.be.reverted
       })
 
       it('should fail to emergencyWithdraw if caller is not owner', async function () {
         await expect(
-          mkt.connect(badguy).emergencyWithdraw(weth.address)
+          portalCreator.connect(badguy).emergencyWithdraw(weth.address)
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('should able to emergencyWithdraw', async function () {
-        await expect(() => weth.mint(mkt.address, 100)).to.changeTokenBalance(
-          weth,
-          mkt,
-          100
-        )
         await expect(() =>
-          mkt.emergencyWithdraw(weth.address)
+          weth.mint(portalCreator.address, 100)
+        ).to.changeTokenBalance(weth, portalCreator, 100)
+        await expect(() =>
+          portalCreator.emergencyWithdraw(weth.address)
         ).to.changeTokenBalance(weth, dao, 100)
       })
 
       it('should fail to distribute if caller is not owner', async function () {
-        await expect(mkt.connect(badguy).distribute()).to.be.revertedWith(
-          'Ownable: caller is not the owner'
-        )
+        await expect(
+          portalCreator.connect(badguy).distribute()
+        ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('should able to distribute', async function () {
-        await expect(() => weth.mint(mkt.address, 10000)).to.changeTokenBalance(
-          weth,
-          mkt,
-          10000
-        )
-        await expect(() => clam.mint(mkt.address, 100)).to.changeTokenBalance(
-          clam,
-          mkt,
-          100
-        )
-        await expect(() => mkt.distribute()).to.changeTokenBalances(
+        await expect(() =>
+          weth.mint(portalCreator.address, 10000)
+        ).to.changeTokenBalance(weth, portalCreator, 10000)
+        await expect(() =>
+          clam.mint(portalCreator.address, 100)
+        ).to.changeTokenBalance(clam, portalCreator, 100)
+        await expect(() => portalCreator.distribute()).to.changeTokenBalances(
           weth,
           [dao, treasury],
           [5000, 5000]
@@ -406,30 +398,30 @@ describe('Otto', function () {
 
     describe('NOT_STARTED', function () {
       it('price in weth', async function () {
-        expect(await mkt.priceInWETH()).to.eq(parseEther('0.08'))
+        expect(await portalCreator.priceInWETH()).to.eq(parseEther('0.08'))
       })
 
       it('should fail to mint when sale not started yet', async function () {
         await expect(
-          mkt.mint(deployer.address, 1, 123, false)
+          portalCreator.mint(deployer.address, 1, 123, false)
         ).to.be.revertedWith('sale not started yet')
       })
     })
 
     describe('PRE_SALE', function () {
       beforeEach(async function () {
-        await mkt.startPreSale()
+        await portalCreator.startPreSale()
       })
 
       it('price in weth', async function () {
-        expect(await mkt.priceInWETH()).to.eq(parseEther('0.06'))
+        expect(await portalCreator.priceInWETH()).to.eq(parseEther('0.06'))
       })
 
       it('price in clam', async function () {
         // 1 ETH = 100 USD = 50 CLAM
         // 0.06 ETH = 3 CLAM
         // 0.042 ETH = 2.1 CLAM
-        expect(await mkt.priceInCLAM()).to.eq(parseUnits('2.1', 9))
+        expect(await portalCreator.priceInCLAM()).to.eq(parseUnits('2.1', 9))
       })
 
       it('price in clam in real world', async function () {
@@ -440,60 +432,62 @@ describe('Otto', function () {
           BigNumber.from('91637067269631'),
           0,
         ])
-        expect(await mkt.priceInCLAM()).to.eq(BigNumber.from('29538777222'))
+        expect(await portalCreator.priceInCLAM()).to.eq(
+          BigNumber.from('29538777222')
+        )
       })
 
       it('should fail to mint if caller is not whitelisted', async function () {
         await expect(
-          mkt.mint(deployer.address, 1, 0, false)
+          portalCreator.mint(deployer.address, 1, 0, false)
         ).to.be.revertedWith('you are not allowed to mint')
       })
 
       describe('ottolisted', function () {
         beforeEach(async function () {
-          await mkt.setOttolisted(3, [deployer.address])
+          await portalCreator.setOttolisted(3, [deployer.address])
         })
         ;[1, 2, 3].forEach(function (quantity) {
           it(`should able to mint ${quantity} otto in weth`, async function () {
-            const price = (await mkt.priceInWETH()).mul(quantity)
+            const price = (await portalCreator.priceInWETH()).mul(quantity)
             await weth.mint(deployer.address, price)
-            await weth.approve(mkt.address, price)
+            await weth.approve(portalCreator.address, price)
             await expect(() =>
-              mkt.mint(deployer.address, quantity, price, false)
+              portalCreator.mint(deployer.address, quantity, price, false)
             ).to.changeTokenBalance(otto, deployer, quantity)
             expect(await weth.balanceOf(deployer.address)).to.eq(0)
           })
         })
         ;[1, 2, 3].forEach(function (quantity) {
           it(`should able to mint ${quantity} otto in clam`, async function () {
-            const price = (await mkt.priceInCLAM()).mul(quantity)
+            const price = (await portalCreator.priceInCLAM()).mul(quantity)
             await clam.mint(deployer.address, price)
-            await clam.approve(mkt.address, price)
+            await clam.approve(portalCreator.address, price)
             await expect(() =>
-              mkt.mint(deployer.address, quantity, price, true)
+              portalCreator.mint(deployer.address, quantity, price, true)
             ).to.changeTokenBalance(otto, deployer, quantity)
             expect(await clam.balanceOf(deployer.address)).to.eq(0)
           })
         })
 
         it('should fail to mint 4 ottos', async function () {
-          const price = (await mkt.priceInWETH()).mul(4)
+          const price = (await portalCreator.priceInWETH()).mul(4)
           await weth.mint(deployer.address, price)
-          await weth.approve(mkt.address, price)
+          await weth.approve(portalCreator.address, price)
           await expect(
-            mkt.mint(deployer.address, 4, price, false)
+            portalCreator.mint(deployer.address, 4, price, false)
           ).to.be.revertedWith('you are not allowed to mint with this amount')
         })
 
         it('should fail to mint 4 ottos at twice', async function () {
-          const price = await mkt.priceInWETH()
+          const price = await portalCreator.priceInWETH()
           await weth.mint(deployer.address, price.mul(4))
-          await weth.approve(mkt.address, price.mul(4))
+          await weth.approve(portalCreator.address, price.mul(4))
           await expect(() =>
-            mkt.mint(deployer.address, 3, price.mul(3), false)
+            portalCreator.mint(deployer.address, 3, price.mul(3), false)
           ).to.changeTokenBalance(otto, deployer, 3)
           await expect(
-            mkt.mint(deployer.address, 1, price, false)
+            portalCreator.mint(deployer.address, 1, price, false)
           ).to.be.revertedWith('you are not allowed to mint with this amount')
         })
       })
@@ -501,18 +495,18 @@ describe('Otto', function () {
 
     describe('PUBLIC_SALE', function () {
       beforeEach(async function () {
-        await mkt.startPublicSale()
+        await portalCreator.startPublicSale()
       })
 
       it('price in weth', async function () {
-        expect(await mkt.priceInWETH()).to.eq(parseEther('0.08'))
+        expect(await portalCreator.priceInWETH()).to.eq(parseEther('0.08'))
       })
 
       it('price in clam', async function () {
         // 1 ETH = 100 USD = 50 CLAM
         // 0.08 ETH = 4 CLAM
         // 0.056 ETH = 2.1 CLAM
-        expect(await mkt.priceInCLAM()).to.eq(parseUnits('2.8', 9))
+        expect(await portalCreator.priceInCLAM()).to.eq(parseUnits('2.8', 9))
       })
 
       it('price in clam in real world', async function () {
@@ -523,15 +517,17 @@ describe('Otto', function () {
           BigNumber.from('91637067269631'),
           0,
         ])
-        expect(await mkt.priceInCLAM()).to.eq(BigNumber.from('39385036296'))
+        expect(await portalCreator.priceInCLAM()).to.eq(
+          BigNumber.from('39385036296')
+        )
       })
       ;[1, 2, 3, 4, 5, 6].forEach(function (quantity) {
         it(`should able to mint ${quantity} otto in weth`, async function () {
-          const price = (await mkt.priceInWETH()).mul(quantity)
+          const price = (await portalCreator.priceInWETH()).mul(quantity)
           await weth.mint(deployer.address, price)
-          await weth.approve(mkt.address, price)
+          await weth.approve(portalCreator.address, price)
           await expect(() =>
-            mkt.mint(deployer.address, quantity, price, false)
+            portalCreator.mint(deployer.address, quantity, price, false)
           ).to.changeTokenBalance(otto, deployer, quantity)
           const ids = await Promise.all(
             [...Array(quantity).keys()].map((i) =>
@@ -545,11 +541,11 @@ describe('Otto', function () {
       })
       ;[1, 2, 3, 4, 5, 6].forEach(function (quantity) {
         it(`should able to mint ${quantity} otto in clam`, async function () {
-          const price = (await mkt.priceInWETH()).mul(quantity)
+          const price = (await portalCreator.priceInWETH()).mul(quantity)
           await clam.mint(deployer.address, price)
-          await clam.approve(mkt.address, price)
+          await clam.approve(portalCreator.address, price)
           await expect(() =>
-            mkt.mint(deployer.address, quantity, price, true)
+            portalCreator.mint(deployer.address, quantity, price, true)
           ).to.changeTokenBalance(otto, deployer, quantity)
           const ids = await Promise.all(
             [...Array(quantity).keys()].map((i) =>
@@ -563,23 +559,23 @@ describe('Otto', function () {
       })
 
       it('should fail to mint 7 ottos', async function () {
-        const price = (await mkt.priceInWETH()).mul(7)
+        const price = (await portalCreator.priceInWETH()).mul(7)
         await weth.mint(deployer.address, price)
-        await weth.approve(mkt.address, price)
+        await weth.approve(portalCreator.address, price)
         await expect(
-          mkt.mint(deployer.address, 7, price, false)
+          portalCreator.mint(deployer.address, 7, price, false)
         ).to.be.revertedWith('ERC721AUpgradeable: quantity to mint too high')
       })
 
       it('should able to mint 12 ottos at twice', async function () {
-        const price = (await mkt.priceInWETH()).mul(12)
+        const price = (await portalCreator.priceInWETH()).mul(12)
         await weth.mint(deployer.address, price)
-        await weth.approve(mkt.address, price)
+        await weth.approve(portalCreator.address, price)
         await expect(() =>
-          mkt.mint(deployer.address, 6, price.div(2), false)
+          portalCreator.mint(deployer.address, 6, price.div(2), false)
         ).to.changeTokenBalance(otto, deployer, 6)
         await expect(() =>
-          mkt.mint(deployer.address, 6, price.div(2), false)
+          portalCreator.mint(deployer.address, 6, price.div(2), false)
         ).to.changeTokenBalance(otto, deployer, 6)
         const ids = await Promise.all(
           [...Array(12).keys()].map((i) =>
