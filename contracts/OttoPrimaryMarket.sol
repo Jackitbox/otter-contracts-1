@@ -20,6 +20,7 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     IERC20 public MAI;
     IUniswapV2Pair public MAICLAM;
     IEACAggregatorProxy wethPriceFeed;
+    address treasury;
     address public dao;
 
     SALE_STAGE public saleStage;
@@ -54,6 +55,7 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         address weth_,
         address maiclam_,
         address wethPriceFeed_,
+        address treasury_,
         address dao_
     ) public initializer {
         __Ownable_init();
@@ -63,6 +65,7 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         MAI = IERC20(MAICLAM.token0());
         CLAM = IERC20(MAICLAM.token1());
         wethPriceFeed = IEACAggregatorProxy(wethPriceFeed_);
+        treasury = treasury_;
         dao = dao_;
         priceOnEachStage[SALE_STAGE.NOT_STARTED] = 8 * 10**16; // 0.08 ETH
         priceOnEachStage[SALE_STAGE.PRE_SALE] = 6 * 10**16; // 0.06 ETH
@@ -99,7 +102,17 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         IERC20(token_).transfer(dao, balance);
     }
 
-    function giveaway(address to_, uint256 quantity_) public onlyOwner {
+    function distribute() external onlyOwner {
+        uint256 clamBalance = CLAM.balanceOf(address(this));
+        CLAM.transfer(dao, clamBalance);
+
+        uint256 wethBalance = WETH.balanceOf(address(this));
+        uint256 toTreasury = _calcPercentage(wethBalance, 5000);
+        WETH.transfer(treasury, toTreasury);
+        WETH.transfer(dao, wethBalance - toTreasury);
+    }
+
+    function giveaway(address to_, uint256 quantity_) external onlyOwner {
         OTTO.mint(to_, quantity_);
     }
 
@@ -109,11 +122,11 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         uint256 maxPrice_,
         bool payInCLAM
     ) external callerIsUser quantityAllowedToMintOnEachStage(quantity_) {
-        _payAndDistribute(quantity_, maxPrice_, payInCLAM);
-        giveaway(to_, quantity_);
+        _pay(quantity_, maxPrice_, payInCLAM);
+        OTTO.mint(to_, quantity_);
     }
 
-    function _payAndDistribute(
+    function _pay(
         uint256 quantity_,
         uint256 maxPrice_,
         bool payInCLAM
@@ -123,13 +136,11 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
             // console.log('needed %s, maxPrice %s', needed_, maxPrice_);
             require(needed_ <= maxPrice_, 'price too low');
             CLAM.transferFrom(msg.sender, address(this), needed_);
-            // TODO: distribute
         } else {
             uint256 needed_ = priceInWETH() * quantity_;
             // console.log('needed %s, maxPrice %s', needed_, maxPrice_);
             require(needed_ <= maxPrice_, 'price too low');
             WETH.transferFrom(msg.sender, address(this), needed_);
-            // TODO: distribute
         }
     }
 
@@ -157,7 +168,7 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         price_ = (priceInWETH() * clamPerWETH) / 10**WETH.decimals();
         // console.log('price in clam: %s', price_);
         // 30% off
-        price_ = _calcDiscount(price_, 3000);
+        price_ = _calcPercentage(price_, 7000);
         // console.log('price with discount in clam: %s', price_);
     }
 
@@ -179,13 +190,13 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
 
     /**
      * @dev
-     * `discount` 3000 means 30 % off
+     * `discount` 7000 means 70% => 30% off
      */
-    function _calcDiscount(uint256 price_, uint256 discount_)
+    function _calcPercentage(uint256 price_, uint256 percentage_)
         private
         pure
         returns (uint256)
     {
-        return (price_ * (10000 - discount_)) / 10000;
+        return (price_ * percentage_) / 10000;
     }
 }

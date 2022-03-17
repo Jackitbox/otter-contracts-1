@@ -12,13 +12,13 @@ const {
 } = require('../artifacts/contracts/OttoPrimaryMarket.sol/IEACAggregatorProxy.json')
 
 describe('Otto', function () {
-  let deployer, badguy, otto, dao
+  let deployer, badguy, otto, dao, treasury
 
   const zeroAddress = '0x0000000000000000000000000000000000000000'
   const baseURI = 'http://localhost:8080/otto/metadata/'
 
   beforeEach(async function () {
-    ;[deployer, dao, badguy] = await ethers.getSigners()
+    ;[deployer, dao, badguy, treasury] = await ethers.getSigners()
 
     const OTTO = await ethers.getContractFactory('Otto')
     otto = await upgrades.deployProxy(OTTO, [
@@ -291,6 +291,7 @@ describe('Otto', function () {
         weth.address,
         maiclam.address,
         wethPriceFeed.address,
+        treasury.address,
         dao.address,
       ])
       await mkt.deployed()
@@ -375,6 +376,31 @@ describe('Otto', function () {
         await expect(() =>
           mkt.emergencyWithdraw(weth.address)
         ).to.changeTokenBalance(weth, dao, 100)
+      })
+
+      it('should fail to distribute if caller is not owner', async function () {
+        await expect(mkt.connect(badguy).distribute()).to.be.revertedWith(
+          'Ownable: caller is not the owner'
+        )
+      })
+
+      it('should able to distribute', async function () {
+        await expect(() => weth.mint(mkt.address, 10000)).to.changeTokenBalance(
+          weth,
+          mkt,
+          10000
+        )
+        await expect(() => clam.mint(mkt.address, 100)).to.changeTokenBalance(
+          clam,
+          mkt,
+          100
+        )
+        await expect(() => mkt.distribute()).to.changeTokenBalances(
+          weth,
+          [dao, treasury],
+          [5000, 5000]
+        )
+        expect(await clam.balanceOf(dao.address)).to.eq(100)
       })
     })
 
