@@ -405,6 +405,10 @@ contract ERC721AUpgradeable is
             quantity <= maxBatchSize,
             'ERC721AUpgradeable: quantity to mint too high'
         );
+        require(
+            totalSupply() + quantity <= collectionSize,
+            'ERC721AUpgradeable: out of stock'
+        );
 
         _beforeTokenTransfers(address(0), to, startTokenId, quantity);
 

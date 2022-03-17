@@ -44,6 +44,61 @@ describe('Otto', function () {
         .reverted
     })
 
+    it('should fail to mint more than', async function () {
+      const OTTO = await ethers.getContractFactory('Otto')
+      const otto = await upgrades.deployProxy(OTTO, [
+        'Otto',
+        'OTTO',
+        6, // maxBatchSize
+        8, // maxOttos
+      ])
+      await otto.deployed()
+      await expect(() => otto.mint(deployer.address, 6)).to.changeTokenBalance(
+        otto,
+        deployer,
+        6
+      )
+      await expect(otto.mint(deployer.address, 3)).to.be.revertedWith(
+        'ERC721AUpgradeable: out of stock'
+      )
+      await expect(() => otto.mint(deployer.address, 2)).to.changeTokenBalance(
+        otto,
+        deployer,
+        2
+      )
+      await expect(otto.mint(deployer.address, 1)).to.be.revertedWith(
+        'ERC721AUpgradeable: out of stock'
+      )
+    })
+
+    it('should able to upgrade collection size', async function () {
+      const OTTO = await ethers.getContractFactory('Otto')
+      const otto = await upgrades.deployProxy(OTTO, [
+        'Otto',
+        'OTTO',
+        3, // maxBatchSize
+        3, // maxOttos
+      ])
+      await otto.deployed()
+      await expect(() => otto.mint(deployer.address, 3)).to.changeTokenBalance(
+        otto,
+        deployer,
+        3
+      )
+      await expect(otto.mint(deployer.address, 1)).to.be.revertedWith(
+        'ERC721AUpgradeable: out of stock'
+      )
+      const OTTOV2 = await ethers.getContractFactory('OttoV2')
+      const ottoV2 = await upgrades.upgradeProxy(otto, OTTOV2)
+      await ottoV2.spo(3, 4)
+      await expect(() =>
+        ottoV2.mint(deployer.address, 1)
+      ).to.changeTokenBalance(otto, deployer, 1)
+      await expect(ottoV2.mint(deployer.address, 1)).to.be.revertedWith(
+        'ERC721AUpgradeable: out of stock'
+      )
+    })
+
     it('should able to mint 1 otto', async function () {
       await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
         otto,

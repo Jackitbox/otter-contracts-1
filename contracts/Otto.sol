@@ -206,3 +206,14 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         return super.supportsInterface(interfaceId);
     }
 }
+
+contract OttoV2 is Otto {
+    function spo(uint256 maxBatchSize_, uint256 collectionSize_)
+        public
+        virtual
+        onlyAdmin
+    {
+        maxBatchSize = maxBatchSize_;
+        collectionSize = collectionSize_;
+    }
+}
