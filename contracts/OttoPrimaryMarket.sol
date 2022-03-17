@@ -22,8 +22,6 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     IEACAggregatorProxy wethPriceFeed;
     address public dao;
 
-    uint256[] public traitsPool;
-
     SALE_STAGE public saleStage;
 
     mapping(address => bool) public ottolisted;
@@ -42,7 +40,6 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     }
 
     modifier quantityAllowedToMintOnEachStage(uint256 quantity_) {
-        require(totalSupply() >= quantity_, 'out of stock');
         require(saleStage != SALE_STAGE.NOT_STARTED, 'sale not started yet');
         if (saleStage == SALE_STAGE.PRE_SALE) {
             if (ottolisted[msg.sender] && diamondhands[msg.sender]) {
@@ -111,27 +108,24 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         saleStage = SALE_STAGE.PUBLIC_SALE;
     }
 
-    function prepare(uint256[] memory pool) external onlyOwner {
-        for (uint256 i = 0; i < pool.length; i++) {
-            traitsPool.push(pool[i]);
-        }
-    }
-
-    function giveaway(address to_, uint256 quantity_) public onlyOwner {
-        uint256[] memory arrTraits = new uint256[](quantity_);
-        for (uint256 i = 0; i < quantity_; i++) {
-            uint256 size = totalSupply();
-            uint256 choosed = _rand(size);
-            arrTraits[i] = traitsPool[choosed];
-            traitsPool[choosed] = traitsPool[size - 1];
-            traitsPool.pop();
-        }
-        OTTO.mint(to_, quantity_, arrTraits);
-    }
-
     function emergencyWithdraw(address token_) external onlyOwner {
         uint256 balance = IERC20(token_).balanceOf(address(this));
         IERC20(token_).transfer(dao, balance);
+    }
+
+    function giveaway(address to_, uint256 quantity_) public onlyOwner {
+        OTTO.mint(to_, quantity_);
+    }
+
+    function mint(
+        address to_,
+        uint256 quantity_,
+        uint256 maxPrice_,
+        bool payInCLAM
+    ) external callerIsUser quantityAllowedToMintOnEachStage(quantity_) {
+        _payAndDistribute(quantity_, maxPrice_, payInCLAM);
+        giveaway(to_, quantity_);
+        mintedAmount[msg.sender] += quantity_;
     }
 
     function _payAndDistribute(
@@ -152,32 +146,6 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
             WETH.transferFrom(msg.sender, address(this), needed_);
             // TODO: distribute
         }
-    }
-
-    function mint(
-        address to_,
-        uint256 quantity_,
-        uint256 maxPrice_,
-        bool payInCLAM
-    ) external callerIsUser quantityAllowedToMintOnEachStage(quantity_) {
-        _payAndDistribute(quantity_, maxPrice_, payInCLAM);
-        giveaway(to_, quantity_);
-        mintedAmount[msg.sender] += quantity_;
-    }
-
-    // FIXME: use chainlink vrf
-    function _rand(uint256 n) private view returns (uint256) {
-        // sha3 and now have been deprecated
-        return
-            uint256(
-                keccak256(abi.encodePacked(block.difficulty, block.timestamp))
-            ) % n;
-        // convert hash to integer
-        // players is an array of entrants
-    }
-
-    function totalSupply() public view returns (uint256) {
-        return traitsPool.length;
     }
 
     function priceInWETH() public view returns (uint256 price_) {

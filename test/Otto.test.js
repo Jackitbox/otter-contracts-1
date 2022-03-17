@@ -16,8 +16,6 @@ describe('Otto', function () {
 
   const zeroAddress = '0x0000000000000000000000000000000000000000'
   const baseURI = 'http://localhost:8080/otto/metadata/'
-  const maxOtto = 5000
-  const maxBatchSize = 6
 
   beforeEach(async function () {
     ;[deployer, dao, badguy] = await ethers.getSigners()
@@ -26,8 +24,8 @@ describe('Otto', function () {
     otto = await upgrades.deployProxy(OTTO, [
       'Otto',
       'OTTO',
-      maxBatchSize,
-      maxOtto,
+      6, // maxBatchSize
+      5000, // maxOttos
     ])
     await otto.deployed()
 
@@ -38,20 +36,20 @@ describe('Otto', function () {
 
   describe('OttoContract', function () {
     it('should fail to mint to zero address', async function () {
-      await expect(otto.mint(zeroAddress, 1, [123])).to.be.revertedWith(
-        'zero address'
-      )
+      await expect(otto.mint(zeroAddress, 1)).to.be.revertedWith('zero address')
     })
 
     it('should fail to mint if caller is not operator', async function () {
-      await expect(otto.connect(badguy).mint(deployer.address, 1, [123])).to.be
+      await expect(otto.connect(badguy).mint(deployer.address, 1)).to.be
         .reverted
     })
 
     it('should able to mint 1 otto', async function () {
-      await expect(() =>
-        otto.mint(deployer.address, 1, [123])
-      ).to.changeTokenBalance(otto, deployer, 1)
+      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+        otto,
+        deployer,
+        1
+      )
       expect(await otto.ownerOf(0)).to.eq(deployer.address)
       expect(await otto.balanceOf(deployer.address)).to.eq(1)
       expect(await otto.tokenURI(0)).to.eq(`${baseURI}0`)
@@ -72,7 +70,7 @@ describe('Otto', function () {
       expect(name).to.eq('')
       expect(desc).to.eq('')
       expect(birthday).to.eq(0)
-      expect(traits).to.eq(123)
+      expect(traits).to.eq(0)
       expect(level).to.eq(1)
       expect(experiences).to.eq(0)
       expect(hungerValue).to.eq(0)
@@ -82,9 +80,11 @@ describe('Otto', function () {
     })
 
     it('should fail to set name if caller is not token owner', async function () {
-      await expect(() =>
-        otto.mint(deployer.address, 1, [123])
-      ).to.changeTokenBalance(otto, deployer, 1)
+      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+        otto,
+        deployer,
+        1
+      )
       await otto.setName(0, 'king')
       await expect(otto.connect(badguy).setName(0, 'king')).to.be.revertedWith(
         'caller is not the owner of the token'
@@ -92,18 +92,22 @@ describe('Otto', function () {
     })
 
     it('should able to set name', async function () {
-      await expect(() =>
-        otto.mint(deployer.address, 1, [123])
-      ).to.changeTokenBalance(otto, deployer, 1)
+      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+        otto,
+        deployer,
+        1
+      )
       await otto.setName(0, 'king')
       const [name] = await otto.get(0)
       expect(name).to.eq('king')
     })
 
     it('should fail to set description if caller is not token owner', async function () {
-      await expect(() =>
-        otto.mint(deployer.address, 1, [123])
-      ).to.changeTokenBalance(otto, deployer, 1)
+      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+        otto,
+        deployer,
+        1
+      )
       await otto.setDescription(0, 'I am king')
       await expect(
         otto.connect(badguy).setName(0, 'I am king')
@@ -111,35 +115,87 @@ describe('Otto', function () {
     })
 
     it('should able to set description', async function () {
-      await expect(() =>
-        otto.mint(deployer.address, 1, [123])
-      ).to.changeTokenBalance(otto, deployer, 1)
+      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+        otto,
+        deployer,
+        1
+      )
       await otto.setDescription(0, 'I am king')
       const [, desc] = await otto.get(0)
       expect(desc).to.eq('I am king')
     })
 
-    it('should fail to mint 6 ottos with 3 traits', async function () {
+    it('should fail to set if caller is not manager', async function () {
+      await expect(() => otto.mint(deployer.address, 3)).to.changeTokenBalance(
+        otto,
+        deployer,
+        3
+      )
       await expect(
-        otto.mint(deployer.address, 6, [123, 456, 789])
-      ).to.be.revertedWith('invalid traits length')
+        otto.connect(badguy).set(
+          1, // tokenId
+          12345, // birthday
+          1, // traits
+          2, // level
+          3, // experiences
+          4, // hungerValue
+          5, // friendship
+          [6, 7, 8, 9, 10, 11, 12, 13], // attrs
+          [14, 15, 16, 17, 18, 19, 20, 21] // bonuses
+        )
+      ).to.be.reverted
+    })
+
+    it('should able to set by manager', async function () {
+      await expect(() => otto.mint(deployer.address, 3)).to.changeTokenBalance(
+        otto,
+        deployer,
+        3
+      )
+      await otto.set(
+        1, // tokenId
+        12345, // birthday
+        1, // traits
+        2, // level
+        3, // experiences
+        4, // hungerValue
+        5, // friendship
+        [6, 7, 8, 9, 10, 11, 12, 13], // attrs
+        [14, 15, 16, 17, 18, 19, 20, 21] // bonuses
+      )
+      const [name, desc, ...got] = await otto.get(1)
+      expect(name).to.eq('')
+      expect(desc).to.eq('')
+      expect(got.map((e) => (e.toNumber ? e.toNumber() : e))).to.deep.eq([
+        12345, // birthday
+        1, // traits
+        2, // level
+        3, // experiences
+        4, // hungerValue
+        5, // friendship
+        [6, 7, 8, 9, 10, 11, 12, 13], // attrs
+        [14, 15, 16, 17, 18, 19, 20, 21], // bonuses
+      ])
     })
 
     it('should able to mint 6 ottos at a time', async function () {
-      await expect(() =>
-        otto.mint(deployer.address, 6, [123, 456, 789, 1011, 1213, 1415])
-      ).to.changeTokenBalance(otto, deployer, 6)
-
+      await expect(() => otto.mint(deployer.address, 6)).to.changeTokenBalance(
+        otto,
+        deployer,
+        6
+      )
       const ids = await Promise.all(
         [...Array(6).keys()].map((i) =>
           otto.tokenOfOwnerByIndex(deployer.address, i)
         )
       )
       expect(ids.map((id) => id.toNumber())).to.deep.eq([0, 1, 2, 3, 4, 5])
-      const infos = await Promise.all(ids.map((i) => otto.get(i)))
-      expect(infos.map((traits) => traits[3].toNumber())).to.deep.eq([
-        123, 456, 789, 1011, 1213, 1415,
-      ])
+    })
+
+    it('should failed to mint 7 ottos at a time', async function () {
+      await expect(otto.mint(deployer.address, 7)).to.be.revertedWith(
+        'ERC721AUpgradeable: quantity to mint too high'
+      )
     })
   })
 
@@ -183,38 +239,18 @@ describe('Otto', function () {
         dao.address,
       ])
       await mkt.deployed()
-      await otto.grantOperator(mkt.address)
+      await otto.grantMinter(mkt.address)
       // mkt = await upgrades.upgradeProxy(mkt.address, MKTv2)
     })
 
     describe('ANY_STAGE', function () {
-      it('should fail to prepare if caller is not contract owner', async function () {
-        await expect(mkt.connect(badguy).prepare([123])).to.be.revertedWith(
-          'Ownable: caller is not the owner'
-        )
-      })
-
-      it('should able to prepare traits pool', async function () {
-        const pool = [123, 456, 789, 1011, 1213, 1415]
-        await mkt.prepare(pool)
-        expect(await mkt.totalSupply()).to.eq(6)
-        const prepared = await Promise.all(
-          [...Array(6).keys()].map((i) => mkt.traitsPool(i))
-        )
-        expect(prepared.map((e) => e.toNumber())).to.deep.eq(pool)
-      })
-
       it('should fail to give otto away by badguy', async function () {
-        const pool = [123, 456, 789, 1011, 1213, 1415]
-        await mkt.prepare(pool)
         await expect(
           mkt.connect(badguy).giveaway(dao.address, 1)
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('should able to give otto away by owner', async function () {
-        const pool = [123, 456, 789, 1011, 1213, 1415]
-        await mkt.prepare(pool)
         await expect(() => mkt.giveaway(dao.address, 1)).to.changeTokenBalance(
           otto,
           dao,
@@ -229,9 +265,8 @@ describe('Otto', function () {
       })
 
       it('should fail to mint when sale not started yet', async function () {
-        await mkt.prepare([123])
         await expect(
-          mkt.mint(deployer.address, 1, 0, false)
+          mkt.mint(deployer.address, 1, 123, false)
         ).to.be.revertedWith('sale not started yet')
       })
     })
@@ -264,8 +299,6 @@ describe('Otto', function () {
       })
 
       it('should fail to mint if caller is not whitelisted', async function () {
-        const pool = [123]
-        await mkt.prepare(pool)
         await expect(
           mkt.mint(deployer.address, 1, 0, false)
         ).to.be.revertedWith('you are not allowed to mint')
@@ -283,8 +316,6 @@ describe('Otto', function () {
           beforeEach(prehook)
           ;[1, 2, 3].forEach(function (quantity) {
             it(`should able to mint ${quantity} otto in weth`, async function () {
-              const pool = [123, 456, 789, 1011, 1213, 1415]
-              await mkt.prepare(pool)
               const price = (await mkt.priceInWETH()).mul(quantity)
               await weth.mint(deployer.address, price)
               await weth.approve(mkt.address, price)
@@ -296,8 +327,6 @@ describe('Otto', function () {
           })
           ;[1, 2, 3].forEach(function (quantity) {
             it(`should able to mint ${quantity} otto in clam`, async function () {
-              const pool = [123, 456, 789, 1011, 1213, 1415]
-              await mkt.prepare(pool)
               const price = (await mkt.priceInCLAM()).mul(quantity)
               await clam.mint(deployer.address, price)
               await clam.approve(mkt.address, price)
@@ -309,8 +338,6 @@ describe('Otto', function () {
           })
 
           it('should fail to mint 4 ottos', async function () {
-            const pool = [123, 456, 789, 1011, 1213, 1415]
-            await mkt.prepare(pool)
             const price = (await mkt.priceInWETH()).mul(4)
             await weth.mint(deployer.address, price)
             await weth.approve(mkt.address, price)
@@ -320,8 +347,6 @@ describe('Otto', function () {
           })
 
           it('should fail to mint 4 ottos at twice', async function () {
-            const pool = [123, 456, 789, 1011, 1213, 1415]
-            await mkt.prepare(pool)
             const price = await mkt.priceInWETH()
             await weth.mint(deployer.address, price.mul(4))
             await weth.approve(mkt.address, price.mul(4))
@@ -342,8 +367,6 @@ describe('Otto', function () {
         })
         ;[1, 2, 3, 4, 5, 6].forEach(function (quantity) {
           it(`should able to mint ${quantity} otto in weth`, async function () {
-            const pool = [123, 456, 789, 1011, 1213, 1415]
-            await mkt.prepare(pool)
             const price = (await mkt.priceInWETH()).mul(quantity)
             await weth.mint(deployer.address, price)
             await weth.approve(mkt.address, price)
@@ -355,8 +378,6 @@ describe('Otto', function () {
         })
 
         it('should fail to mint 7 ottos', async function () {
-          const pool = [123, 456, 789, 1011, 1213, 1415, 1516]
-          await mkt.prepare(pool)
           const price = (await mkt.priceInWETH()).mul(7)
           await weth.mint(deployer.address, price)
           await weth.approve(mkt.address, price)
@@ -366,8 +387,6 @@ describe('Otto', function () {
         })
 
         it('should fail to mint 7 ottos at twice', async function () {
-          const pool = [123, 456, 789, 1011, 1213, 1415, 1516]
-          await mkt.prepare(pool)
           const price = await mkt.priceInWETH()
           await weth.mint(deployer.address, price.mul(7))
           await weth.approve(mkt.address, price.mul(7))
@@ -407,69 +426,44 @@ describe('Otto', function () {
         ])
         expect(await mkt.priceInCLAM()).to.eq(BigNumber.from('39385036296'))
       })
-
-      it('should fail to mint otto after sold out', async function () {
-        await expect(
-          mkt.mint(deployer.address, 1, 0, false)
-        ).to.be.revertedWith('out of stock')
-      })
-
-      it('should fail to mint otto if out of stock', async function () {
-        await mkt.prepare([123])
-        await expect(
-          mkt.mint(deployer.address, 2, 0, false)
-        ).to.be.revertedWith('out of stock')
-      })
-
-      it('should able to mint 1 otto', async function () {
-        const pool = [123, 456, 789, 1011, 1213, 1415]
-        await mkt.prepare(pool)
-        const price = await mkt.priceInWETH()
-        await weth.mint(deployer.address, price)
-        await weth.approve(mkt.address, price)
-        await expect(() =>
-          mkt.mint(deployer.address, 1, price, false)
-        ).to.changeTokenBalance(otto, deployer, 1)
-        expect(await otto.ownerOf(0)).to.eq(deployer.address)
-        expect(await otto.tokenURI(0)).to.eq(`${baseURI}0`)
-
-        expect(await mkt.totalSupply()).to.eq(5)
-        const remain = await Promise.all(
-          [...Array(5).keys()].map((i) => mkt.traitsPool(i))
-        )
-        const [, , , bought] = await otto.get(0)
-        expect(
-          remain.map((e) => e.toNumber()).sort((a, b) => a - b)
-        ).to.deep.eq(pool.filter((e) => e !== bought.toNumber()))
-      })
       ;[1, 2, 3, 4, 5, 6].forEach(function (quantity) {
         it(`should able to mint ${quantity} otto in weth`, async function () {
-          const pool = [123, 456, 789, 1011, 1213, 1415]
-          await mkt.prepare(pool)
           const price = (await mkt.priceInWETH()).mul(quantity)
           await weth.mint(deployer.address, price)
           await weth.approve(mkt.address, price)
           await expect(() =>
             mkt.mint(deployer.address, quantity, price, false)
           ).to.changeTokenBalance(otto, deployer, quantity)
+          const ids = await Promise.all(
+            [...Array(quantity).keys()].map((i) =>
+              otto.tokenOfOwnerByIndex(deployer.address, i)
+            )
+          )
+          expect(ids.map((id) => id.toNumber())).to.deep.eq([
+            ...Array(quantity).keys(),
+          ])
         })
       })
       ;[1, 2, 3, 4, 5, 6].forEach(function (quantity) {
         it(`should able to mint ${quantity} otto in clam`, async function () {
-          const pool = [123, 456, 789, 1011, 1213, 1415]
-          await mkt.prepare(pool)
           const price = (await mkt.priceInWETH()).mul(quantity)
           await clam.mint(deployer.address, price)
           await clam.approve(mkt.address, price)
           await expect(() =>
             mkt.mint(deployer.address, quantity, price, true)
           ).to.changeTokenBalance(otto, deployer, quantity)
+          const ids = await Promise.all(
+            [...Array(quantity).keys()].map((i) =>
+              otto.tokenOfOwnerByIndex(deployer.address, i)
+            )
+          )
+          expect(ids.map((id) => id.toNumber())).to.deep.eq([
+            ...Array(quantity).keys(),
+          ])
         })
       })
 
       it('should fail to mint 7 ottos', async function () {
-        const pool = [123, 456, 789, 1011, 1213, 1415, 1516]
-        await mkt.prepare(pool)
         const price = (await mkt.priceInWETH()).mul(7)
         await weth.mint(deployer.address, price)
         await weth.approve(mkt.address, price)
@@ -478,33 +472,7 @@ describe('Otto', function () {
         ).to.be.revertedWith('ERC721AUpgradeable: quantity to mint too high')
       })
 
-      it('should able to mint 6 ottos', async function () {
-        const pool = [123, 456, 789, 1011, 1213, 1415]
-        await mkt.prepare(pool)
-        const price = (await mkt.priceInWETH()).mul(6)
-        await weth.mint(deployer.address, price)
-        await weth.approve(mkt.address, price)
-        await expect(() =>
-          mkt.mint(deployer.address, 6, price, false)
-        ).to.changeTokenBalance(otto, deployer, 6)
-        const ids = await Promise.all(
-          [...Array(6).keys()].map((i) =>
-            otto.tokenOfOwnerByIndex(deployer.address, i)
-          )
-        )
-        expect(ids.map((id) => id.toNumber())).to.deep.eq([...Array(6).keys()])
-
-        const infos = await Promise.all(ids.map((i) => otto.get(i)))
-        expect(
-          infos.map((info) => info[3].toNumber()).sort((a, b) => a - b)
-        ).to.deep.eq(pool)
-      })
-
       it('should able to mint 12 ottos at twice', async function () {
-        const pool = [
-          123, 456, 789, 1011, 1213, 1415, 1516, 1718, 1920, 2122, 2324, 2526,
-        ]
-        await mkt.prepare(pool)
         const price = (await mkt.priceInWETH()).mul(12)
         await weth.mint(deployer.address, price)
         await weth.approve(mkt.address, price)
@@ -520,11 +488,6 @@ describe('Otto', function () {
           )
         )
         expect(ids.map((id) => id.toNumber())).to.deep.eq([...Array(12).keys()])
-
-        const infos = await Promise.all(ids.map((i) => otto.get(i)))
-        expect(
-          infos.map((info) => info[3].toNumber()).sort((a, b) => a - b)
-        ).to.deep.eq(pool)
       })
     })
   })

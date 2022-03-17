@@ -6,11 +6,12 @@ import './libraries/ERC721AUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 
 contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
-    bytes32 public constant OPERATOR_ROLE = keccak256('OPERATOR_ROLE');
+    bytes32 public constant MINTER_ROLE = keccak256('MINTER_ROLE');
+    bytes32 public constant MANAGER_ROLE = keccak256('MANAGER_ROLE');
     uint256 public constant NUM_ATTRIBUTES = 8;
 
     string private _baseTokenURI;
-    OttoInfo[] private infos;
+    mapping(uint256 => OttoInfo) private infos;
 
     struct OttoInfo {
         string name;
@@ -24,6 +25,7 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         // [STR, DEF, DEX, INT, LUK, CON, CUTE, BRS]
         int16[NUM_ATTRIBUTES] attributes; // can be changed by level up
         int16[NUM_ATTRIBUTES] attributeBonuses; // from traits & wearable
+        uint256[8] __reserved;
     }
 
     modifier onlyAdmin() {
@@ -31,8 +33,13 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         _;
     }
 
-    modifier onlyOperator() {
-        _checkRole(OPERATOR_ROLE, _msgSender());
+    modifier onlyMinter() {
+        _checkRole(MINTER_ROLE, _msgSender());
+        _;
+    }
+
+    modifier onlyManager() {
+        _checkRole(MANAGER_ROLE, _msgSender());
         _;
     }
 
@@ -67,15 +74,24 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
             collectionSize_
         );
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setupRole(OPERATOR_ROLE, _msgSender());
+        _setupRole(MINTER_ROLE, _msgSender());
+        _setupRole(MANAGER_ROLE, _msgSender());
     }
 
-    function grantOperator(address operator_) public onlyAdmin {
-        _setupRole(OPERATOR_ROLE, operator_);
+    function grantMinter(address minter_) public onlyAdmin {
+        _setupRole(MINTER_ROLE, minter_);
     }
 
-    function revokeOperator(address operator_) public onlyAdmin {
-        _revokeRole(OPERATOR_ROLE, operator_);
+    function revokeMinter(address minter_) public onlyAdmin {
+        _revokeRole(MINTER_ROLE, minter_);
+    }
+
+    function grantManager(address manager_) public onlyAdmin {
+        _setupRole(MANAGER_ROLE, manager_);
+    }
+
+    function revokeManager(address manager_) public onlyAdmin {
+        _revokeRole(MANAGER_ROLE, manager_);
     }
 
     function setName(uint256 tokenId_, string memory name_)
@@ -94,29 +110,29 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         infos[tokenId_].description = desc_;
     }
 
-    function mint(
-        address to_,
-        uint256 quantity_,
-        uint256[] memory arrTraits_
-    ) external virtual override onlyOperator nonZeroAddress(to_) {
-        require(arrTraits_.length == quantity_, 'invalid traits length');
-
+    function mint(address to_, uint256 quantity_)
+        external
+        virtual
+        override
+        onlyMinter
+        nonZeroAddress(to_)
+    {
+        uint256 startTokenId = totalSupply();
         _safeMint(to_, quantity_);
         for (uint256 i = 0; i < quantity_; i++) {
-            infos.push(
-                OttoInfo({
-                    name: '',
-                    description: '',
-                    birthday: 0,
-                    traits: arrTraits_[i],
-                    level: 1,
-                    experiences: 0,
-                    hungerValue: 0,
-                    friendship: 0,
-                    attributes: [int16(0), 0, 0, 0, 0, 0, 0, 0],
-                    attributeBonuses: [int16(0), 0, 0, 0, 0, 0, 0, 0]
-                })
-            );
+            infos[startTokenId + i] = OttoInfo({
+                name: '',
+                description: '',
+                birthday: 0,
+                traits: 0,
+                level: 1,
+                experiences: 0,
+                hungerValue: 0,
+                friendship: 0,
+                attributes: [int16(0), 0, 0, 0, 0, 0, 0, 0],
+                attributeBonuses: [int16(0), 0, 0, 0, 0, 0, 0, 0],
+                __reserved: [uint256(0), 0, 0, 0, 0, 0, 0, 0]
+            });
         }
     }
 
@@ -157,6 +173,27 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         friendship_ = otto.friendship;
         attributes_ = otto.attributes;
         attributeBonuses_ = otto.attributeBonuses;
+    }
+
+    function set(
+        uint256 tokenId_,
+        uint256 birthday_,
+        uint256 traits_,
+        uint256 level_,
+        uint256 experiences_,
+        uint256 hungerValue_,
+        uint256 friendship_,
+        int16[NUM_ATTRIBUTES] memory attributes_,
+        int16[NUM_ATTRIBUTES] memory attributeBonuses_
+    ) external virtual onlyManager validOttoId(tokenId_) {
+        infos[tokenId_].birthday = birthday_;
+        infos[tokenId_].traits = traits_;
+        infos[tokenId_].level = level_;
+        infos[tokenId_].experiences = experiences_;
+        infos[tokenId_].hungerValue = hungerValue_;
+        infos[tokenId_].friendship = friendship_;
+        infos[tokenId_].attributes = attributes_;
+        infos[tokenId_].attributeBonuses = attributeBonuses_;
     }
 
     function supportsInterface(bytes4 interfaceId)
