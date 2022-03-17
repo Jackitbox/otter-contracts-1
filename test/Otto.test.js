@@ -238,7 +238,7 @@ describe('Otto', function () {
 
     describe('PRE_SALE', function () {
       beforeEach(async function () {
-        await mkt.preSaleStart()
+        await mkt.startPreSale()
       })
 
       it('price in weth', async function () {
@@ -383,7 +383,7 @@ describe('Otto', function () {
 
     describe('PUBLIC_SALE', function () {
       beforeEach(async function () {
-        await mkt.publicSaleStart()
+        await mkt.startPublicSale()
       })
 
       it('price in weth', async function () {

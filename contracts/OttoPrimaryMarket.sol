@@ -90,18 +90,6 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         }
     }
 
-    function stopSale() external onlyOwner {
-        saleStage = SALE_STAGE.NOT_STARTED;
-    }
-
-    function preSaleStart() external onlyOwner {
-        saleStage = SALE_STAGE.PRE_SALE;
-    }
-
-    function publicSaleStart() external onlyOwner {
-        saleStage = SALE_STAGE.PUBLIC_SALE;
-    }
-
     function setDiamondhands(address[] memory diamondhands_)
         external
         onlyOwner
@@ -111,10 +99,39 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         }
     }
 
+    function stopSale() external onlyOwner {
+        saleStage = SALE_STAGE.NOT_STARTED;
+    }
+
+    function startPreSale() external onlyOwner {
+        saleStage = SALE_STAGE.PRE_SALE;
+    }
+
+    function startPublicSale() external onlyOwner {
+        saleStage = SALE_STAGE.PUBLIC_SALE;
+    }
+
     function prepare(uint256[] memory pool) external onlyOwner {
         for (uint256 i = 0; i < pool.length; i++) {
             traitsPool.push(pool[i]);
         }
+    }
+
+    function giveaway(address to_, uint256 quantity_) public onlyOwner {
+        uint256[] memory arrTraits = new uint256[](quantity_);
+        for (uint256 i = 0; i < quantity_; i++) {
+            uint256 size = totalSupply();
+            uint256 choosed = _rand(size);
+            arrTraits[i] = traitsPool[choosed];
+            traitsPool[choosed] = traitsPool[size - 1];
+            traitsPool.pop();
+        }
+        OTTO.mint(to_, quantity_, arrTraits);
+    }
+
+    function emergencyWithdraw(address token_) external onlyOwner {
+        uint256 balance = IERC20(token_).balanceOf(address(this));
+        IERC20(token_).transfer(dao, balance);
     }
 
     function _payAndDistribute(
@@ -145,24 +162,7 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     ) external callerIsUser quantityAllowedToMintOnEachStage(quantity_) {
         _payAndDistribute(quantity_, maxPrice_, payInCLAM);
         giveaway(to_, quantity_);
-    }
-
-    function giveaway(address to_, uint256 quantity_) public onlyOwner {
-        uint256[] memory arrTraits = new uint256[](quantity_);
-        for (uint256 i = 0; i < quantity_; i++) {
-            uint256 size = totalSupply();
-            uint256 choosed = _rand(size);
-            arrTraits[i] = traitsPool[choosed];
-            traitsPool[choosed] = traitsPool[size - 1];
-            traitsPool.pop();
-        }
-        OTTO.mint(to_, quantity_, arrTraits);
         mintedAmount[msg.sender] += quantity_;
-    }
-
-    function emergencyWithdraw(address token_) external onlyOwner {
-        uint256 balance = IERC20(token_).balanceOf(address(this));
-        IERC20(token_).transfer(dao, balance);
     }
 
     // FIXME: use chainlink vrf
@@ -199,14 +199,16 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         // console.log('usdPerWETH %s', usdPerWETH);
         uint256 maiPerCLAM = _maiPerCLAM();
         // console.log('maiPerCLAM %s', maiPerCLAM);
-        uint256 clamPerWETH = (_valueOf(usdPerWETH, wethPriceFeed.decimals()) *
-            10**CLAM.decimals()) / _valueOf(maiPerCLAM, MAI.decimals());
+        uint256 clamPerWETH = (_toDecimal(
+            usdPerWETH,
+            wethPriceFeed.decimals()
+        ) * 10**CLAM.decimals()) / _toDecimal(maiPerCLAM, MAI.decimals());
         // console.log('clamPerWETH %s', clamPerWETH);
 
         price_ = (priceInWETH() * clamPerWETH) / 10**WETH.decimals();
         // console.log('price in clam: %s', price_);
         // 30% off
-        price_ = discountPrice(price_, 3000);
+        price_ = _calcDiscount(price_, 3000);
         // console.log('price with discount in clam: %s', price_);
     }
 
@@ -214,11 +216,11 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         (uint256 reserveMAI, uint256 reserveCLAM, ) = MAICLAM.getReserves();
         // console.log('reserveMAI %s, reserveCLAM %s', reserveMAI, reserveCLAM);
         price_ =
-            (_valueOf(reserveMAI, MAI.decimals()) * 10**MAI.decimals()) /
-            _valueOf(reserveCLAM, CLAM.decimals());
+            (_toDecimal(reserveMAI, MAI.decimals()) * 10**MAI.decimals()) /
+            _toDecimal(reserveCLAM, CLAM.decimals());
     }
 
-    function _valueOf(uint256 amount_, uint8 decimals_)
+    function _toDecimal(uint256 amount_, uint8 decimals_)
         private
         pure
         returns (uint256)
@@ -230,8 +232,8 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
      * @dev
      * `discount` 3000 means 30 % off
      */
-    function discountPrice(uint256 price_, uint256 discount_)
-        public
+    function _calcDiscount(uint256 price_, uint256 discount_)
+        private
         pure
         returns (uint256)
     {
