@@ -149,6 +149,7 @@ describe('Otto', function () {
     beforeEach(async function () {
       const CLAM = await smock.mock('OtterClamERC20V2')
       const MKT = await ethers.getContractFactory('OttoPrimaryMarket')
+      // const MKTv2 = await ethers.getContractFactory('OttoPrimaryMarketV2')
 
       clam = await CLAM.deploy()
       await clam.setVault(deployer.address)
@@ -182,17 +183,11 @@ describe('Otto', function () {
         dao.address,
       ])
       await mkt.deployed()
+      await otto.grantOperator(mkt.address)
+      // mkt = await upgrades.upgradeProxy(mkt.address, MKTv2)
     })
 
-    describe('NOT_STARTED', function () {
-      beforeEach(async function () {
-        await otto.grantOperator(mkt.address)
-      })
-
-      it('price in weth', async function () {
-        expect(await mkt.priceInWETH()).to.eq(parseEther('0.08'))
-      })
-
+    describe('ANY_STAGE', function () {
       it('should fail to prepare if caller is not contract owner', async function () {
         await expect(mkt.connect(badguy).prepare([123])).to.be.revertedWith(
           'Ownable: caller is not the owner'
@@ -209,6 +204,30 @@ describe('Otto', function () {
         expect(prepared.map((e) => e.toNumber())).to.deep.eq(pool)
       })
 
+      it('should fail to give otto away by badguy', async function () {
+        const pool = [123, 456, 789, 1011, 1213, 1415]
+        await mkt.prepare(pool)
+        await expect(
+          mkt.connect(badguy).giveaway(dao.address, 1)
+        ).to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
+      it('should able to give otto away by owner', async function () {
+        const pool = [123, 456, 789, 1011, 1213, 1415]
+        await mkt.prepare(pool)
+        await expect(() => mkt.giveaway(dao.address, 1)).to.changeTokenBalance(
+          otto,
+          dao,
+          1
+        )
+      })
+    })
+
+    describe('NOT_STARTED', function () {
+      it('price in weth', async function () {
+        expect(await mkt.priceInWETH()).to.eq(parseEther('0.08'))
+      })
+
       it('should fail to mint when sale not started yet', async function () {
         await mkt.prepare([123])
         await expect(
@@ -219,7 +238,6 @@ describe('Otto', function () {
 
     describe('PRE_SALE', function () {
       beforeEach(async function () {
-        await otto.grantOperator(mkt.address)
         await mkt.preSaleStart()
       })
 
@@ -365,7 +383,6 @@ describe('Otto', function () {
 
     describe('PUBLIC_SALE', function () {
       beforeEach(async function () {
-        await otto.grantOperator(mkt.address)
         await mkt.publicSaleStart()
       })
 

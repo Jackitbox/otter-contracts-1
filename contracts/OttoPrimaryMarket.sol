@@ -90,6 +90,10 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         }
     }
 
+    function stopSale() external onlyOwner {
+        saleStage = SALE_STAGE.NOT_STARTED;
+    }
+
     function preSaleStart() external onlyOwner {
         saleStage = SALE_STAGE.PRE_SALE;
     }
@@ -140,6 +144,10 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         bool payInCLAM
     ) external callerIsUser quantityAllowedToMintOnEachStage(quantity_) {
         _payAndDistribute(quantity_, maxPrice_, payInCLAM);
+        giveaway(to_, quantity_);
+    }
+
+    function giveaway(address to_, uint256 quantity_) public onlyOwner {
         uint256[] memory arrTraits = new uint256[](quantity_);
         for (uint256 i = 0; i < quantity_; i++) {
             uint256 size = totalSupply();
@@ -148,7 +156,6 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
             traitsPool[choosed] = traitsPool[size - 1];
             traitsPool.pop();
         }
-        // TODO: tokenomic
         OTTO.mint(to_, quantity_, arrTraits);
         mintedAmount[msg.sender] += quantity_;
     }
