@@ -359,68 +359,11 @@ describe('Otto', function () {
         ).to.be.revertedWith('you are not allowed to mint')
       })
 
-      // ottolisted or diamondhands
-      const setOttolisted = async () => {
-        await mkt.setOttolisted([deployer.address])
-      }
-      const setDiamondhands = async () => {
-        await mkt.setDiamondhands([deployer.address])
-      }
-      ;[setOttolisted, setDiamondhands].forEach(function (prehook) {
-        describe(`${prehook.name}`, function () {
-          beforeEach(prehook)
-          ;[1, 2, 3].forEach(function (quantity) {
-            it(`should able to mint ${quantity} otto in weth`, async function () {
-              const price = (await mkt.priceInWETH()).mul(quantity)
-              await weth.mint(deployer.address, price)
-              await weth.approve(mkt.address, price)
-              await expect(() =>
-                mkt.mint(deployer.address, quantity, price, false)
-              ).to.changeTokenBalance(otto, deployer, quantity)
-              expect(await weth.balanceOf(deployer.address)).to.eq(0)
-            })
-          })
-          ;[1, 2, 3].forEach(function (quantity) {
-            it(`should able to mint ${quantity} otto in clam`, async function () {
-              const price = (await mkt.priceInCLAM()).mul(quantity)
-              await clam.mint(deployer.address, price)
-              await clam.approve(mkt.address, price)
-              await expect(() =>
-                mkt.mint(deployer.address, quantity, price, true)
-              ).to.changeTokenBalance(otto, deployer, quantity)
-              expect(await clam.balanceOf(deployer.address)).to.eq(0)
-            })
-          })
-
-          it('should fail to mint 4 ottos', async function () {
-            const price = (await mkt.priceInWETH()).mul(4)
-            await weth.mint(deployer.address, price)
-            await weth.approve(mkt.address, price)
-            await expect(
-              mkt.mint(deployer.address, 4, price, false)
-            ).to.be.revertedWith('you can not mint over 3 tokens')
-          })
-
-          it('should fail to mint 4 ottos at twice', async function () {
-            const price = await mkt.priceInWETH()
-            await weth.mint(deployer.address, price.mul(4))
-            await weth.approve(mkt.address, price.mul(4))
-            await expect(() =>
-              mkt.mint(deployer.address, 3, price.mul(3), false)
-            ).to.changeTokenBalance(otto, deployer, 3)
-            await expect(
-              mkt.mint(deployer.address, 1, price, false)
-            ).to.be.revertedWith('you can not mint over 3 tokens')
-          })
-        })
-      })
-
-      describe('when ottolisted + diamondhands', function () {
+      describe('ottolisted', function () {
         beforeEach(async function () {
-          await mkt.setOttolisted([deployer.address])
-          await mkt.setDiamondhands([deployer.address])
+          await mkt.setOttolisted(3, [deployer.address])
         })
-        ;[1, 2, 3, 4, 5, 6].forEach(function (quantity) {
+        ;[1, 2, 3].forEach(function (quantity) {
           it(`should able to mint ${quantity} otto in weth`, async function () {
             const price = (await mkt.priceInWETH()).mul(quantity)
             await weth.mint(deployer.address, price)
@@ -431,26 +374,37 @@ describe('Otto', function () {
             expect(await weth.balanceOf(deployer.address)).to.eq(0)
           })
         })
+        ;[1, 2, 3].forEach(function (quantity) {
+          it(`should able to mint ${quantity} otto in clam`, async function () {
+            const price = (await mkt.priceInCLAM()).mul(quantity)
+            await clam.mint(deployer.address, price)
+            await clam.approve(mkt.address, price)
+            await expect(() =>
+              mkt.mint(deployer.address, quantity, price, true)
+            ).to.changeTokenBalance(otto, deployer, quantity)
+            expect(await clam.balanceOf(deployer.address)).to.eq(0)
+          })
+        })
 
-        it('should fail to mint 7 ottos', async function () {
-          const price = (await mkt.priceInWETH()).mul(7)
+        it('should fail to mint 4 ottos', async function () {
+          const price = (await mkt.priceInWETH()).mul(4)
           await weth.mint(deployer.address, price)
           await weth.approve(mkt.address, price)
           await expect(
-            mkt.mint(deployer.address, 7, price, false)
-          ).to.be.revertedWith('you can not mint over 6 tokens')
+            mkt.mint(deployer.address, 4, price, false)
+          ).to.be.revertedWith('you are not allowed to mint with this amount')
         })
 
-        it('should fail to mint 7 ottos at twice', async function () {
+        it('should fail to mint 4 ottos at twice', async function () {
           const price = await mkt.priceInWETH()
-          await weth.mint(deployer.address, price.mul(7))
-          await weth.approve(mkt.address, price.mul(7))
+          await weth.mint(deployer.address, price.mul(4))
+          await weth.approve(mkt.address, price.mul(4))
           await expect(() =>
-            mkt.mint(deployer.address, 6, price.mul(6), false)
-          ).to.changeTokenBalance(otto, deployer, 6)
+            mkt.mint(deployer.address, 3, price.mul(3), false)
+          ).to.changeTokenBalance(otto, deployer, 3)
           await expect(
             mkt.mint(deployer.address, 1, price, false)
-          ).to.be.revertedWith('you can not mint over 6 tokens')
+          ).to.be.revertedWith('you are not allowed to mint with this amount')
         })
       })
     })

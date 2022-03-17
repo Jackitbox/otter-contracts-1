@@ -24,9 +24,7 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
 
     SALE_STAGE public saleStage;
 
-    mapping(address => bool) public ottolisted;
-    mapping(address => bool) public diamondhands;
-    mapping(address => uint256) public mintedAmount;
+    mapping(address => uint256) public ottolisted;
 
     enum SALE_STAGE {
         NOT_STARTED,
@@ -42,24 +40,11 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     modifier quantityAllowedToMintOnEachStage(uint256 quantity_) {
         require(saleStage != SALE_STAGE.NOT_STARTED, 'sale not started yet');
         if (saleStage == SALE_STAGE.PRE_SALE) {
-            if (ottolisted[msg.sender] && diamondhands[msg.sender]) {
-                require(
-                    quantity_ + mintedAmount[msg.sender] <= 6,
-                    'you can not mint over 6 tokens'
-                );
-            } else if (ottolisted[msg.sender] && !diamondhands[msg.sender]) {
-                require(
-                    quantity_ + mintedAmount[msg.sender] <= 3,
-                    'you can not mint over 3 tokens'
-                );
-            } else if (!ottolisted[msg.sender] && diamondhands[msg.sender]) {
-                require(
-                    quantity_ + mintedAmount[msg.sender] <= 3,
-                    'you can not mint over 3 tokens'
-                );
-            } else {
-                revert('you are not allowed to mint');
-            }
+            require(
+                quantity_ <= ottolisted[msg.sender],
+                'you are not allowed to mint with this amount'
+            );
+            ottolisted[msg.sender] -= quantity_;
         }
         _;
     }
@@ -81,18 +66,12 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         dao = dao_;
     }
 
-    function setOttolisted(address[] memory ottolisted_) external onlyOwner {
-        for (uint256 i = 0; i < ottolisted_.length; i++) {
-            ottolisted[ottolisted_[i]] = true;
-        }
-    }
-
-    function setDiamondhands(address[] memory diamondhands_)
+    function setOttolisted(uint256 amount_, address[] memory ottolisted_)
         external
         onlyOwner
     {
-        for (uint256 i = 0; i < diamondhands_.length; i++) {
-            diamondhands[diamondhands_[i]] = true;
+        for (uint256 i = 0; i < ottolisted_.length; i++) {
+            ottolisted[ottolisted_[i]] = amount_;
         }
     }
 
@@ -125,7 +104,6 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     ) external callerIsUser quantityAllowedToMintOnEachStage(quantity_) {
         _payAndDistribute(quantity_, maxPrice_, payInCLAM);
         giveaway(to_, quantity_);
-        mintedAmount[msg.sender] += quantity_;
     }
 
     function _payAndDistribute(
