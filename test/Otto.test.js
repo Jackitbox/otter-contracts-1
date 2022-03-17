@@ -247,7 +247,7 @@ describe('Otto', function () {
       expect(ids.map((id) => id.toNumber())).to.deep.eq([0, 1, 2, 3, 4, 5])
     })
 
-    it('should failed to mint 7 ottos at a time', async function () {
+    it('should fail to mint 7 ottos at a time', async function () {
       await expect(otto.mint(deployer.address, 7)).to.be.revertedWith(
         'ERC721AUpgradeable: quantity to mint too high'
       )
@@ -305,12 +305,76 @@ describe('Otto', function () {
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
-      it('should able to give otto away by owner', async function () {
+      it('should able to give otto away', async function () {
         await expect(() => mkt.giveaway(dao.address, 1)).to.changeTokenBalance(
           otto,
           dao,
           1
         )
+      })
+
+      it('should fail to setOttolisted if caller is not owner', async function () {
+        await expect(
+          mkt.connect(badguy).setOttolisted(1, [dao.address])
+        ).to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
+      it('should able to setOttolisted', async function () {
+        await mkt.setOttolisted(3, [dao.address])
+        expect(await mkt.ottolisted(dao.address)).to.eq(3)
+      })
+
+      it('should fail to adjustPrice if caller is not owner', async function () {
+        await expect(
+          mkt.connect(badguy).adjustPrice(0, 123)
+        ).to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
+      it('should fail to stopSale if caller is not owner', async function () {
+        await expect(mkt.connect(badguy).stopSale()).to.be.revertedWith(
+          'Ownable: caller is not the owner'
+        )
+      })
+
+      it('should fail to startPreSale if caller is not owner', async function () {
+        await expect(mkt.connect(badguy).startPreSale()).to.be.revertedWith(
+          'Ownable: caller is not the owner'
+        )
+      })
+
+      it('should fail to startPublicSale if caller is not owner', async function () {
+        await expect(mkt.connect(badguy).startPublicSale()).to.be.revertedWith(
+          'Ownable: caller is not the owner'
+        )
+      })
+
+      it('should able to adjust price', async function () {
+        await mkt.adjustPrice(0, 123)
+        expect(await mkt.priceInWETH()).to.eq(123)
+        await mkt.startPreSale()
+        await mkt.adjustPrice(1, 456)
+        expect(await mkt.priceInWETH()).to.eq(456)
+        await mkt.startPublicSale()
+        await mkt.adjustPrice(2, 789)
+        expect(await mkt.priceInWETH()).to.eq(789)
+        await expect(mkt.adjustPrice(3, 123)).to.be.reverted
+      })
+
+      it('should fail to emergencyWithdraw if caller is not owner', async function () {
+        await expect(
+          mkt.connect(badguy).emergencyWithdraw(weth.address)
+        ).to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
+      it('should able to emergencyWithdraw', async function () {
+        await expect(() => weth.mint(mkt.address, 100)).to.changeTokenBalance(
+          weth,
+          mkt,
+          100
+        )
+        await expect(() =>
+          mkt.emergencyWithdraw(weth.address)
+        ).to.changeTokenBalance(weth, dao, 100)
       })
     })
 

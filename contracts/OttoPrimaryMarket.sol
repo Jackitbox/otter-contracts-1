@@ -23,8 +23,8 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     address public dao;
 
     SALE_STAGE public saleStage;
-
     mapping(address => uint256) public ottolisted;
+    mapping(SALE_STAGE => uint256) public priceOnEachStage; // in ETH
 
     enum SALE_STAGE {
         NOT_STARTED,
@@ -64,6 +64,9 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         CLAM = IERC20(MAICLAM.token1());
         wethPriceFeed = IEACAggregatorProxy(wethPriceFeed_);
         dao = dao_;
+        priceOnEachStage[SALE_STAGE.NOT_STARTED] = 8 * 10**16; // 0.08 ETH
+        priceOnEachStage[SALE_STAGE.PRE_SALE] = 6 * 10**16; // 0.06 ETH
+        priceOnEachStage[SALE_STAGE.PUBLIC_SALE] = 8 * 10**16; // 0.08 ETH
     }
 
     function setOttolisted(uint256 amount_, address[] memory ottolisted_)
@@ -73,6 +76,10 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
         for (uint256 i = 0; i < ottolisted_.length; i++) {
             ottolisted[ottolisted_[i]] = amount_;
         }
+    }
+
+    function adjustPrice(SALE_STAGE stage_, uint256 price_) external onlyOwner {
+        priceOnEachStage[stage_] = price_;
     }
 
     function stopSale() external onlyOwner {
@@ -127,11 +134,7 @@ contract OttoPrimaryMarket is OwnableUpgradeable {
     }
 
     function priceInWETH() public view returns (uint256 price_) {
-        if (saleStage == SALE_STAGE.PRE_SALE) {
-            price_ = 6 * 10**16; // 0.06 ETH
-        } else {
-            price_ = 8 * 10**16; // 0.08 ETH
-        }
+        return priceOnEachStage[saleStage];
     }
 
     function priceInCLAM() public view returns (uint256 price_) {
