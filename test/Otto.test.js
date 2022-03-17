@@ -79,51 +79,51 @@ describe('Otto', function () {
       expect(bonuses).to.deep.eq([0, 0, 0, 0, 0, 0, 0, 0])
     })
 
-    it('should fail to set name if caller is not token owner', async function () {
-      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
-        otto,
-        deployer,
-        1
-      )
-      await otto.setName(0, 'king')
-      await expect(otto.connect(badguy).setName(0, 'king')).to.be.revertedWith(
-        'caller is not the owner of the token'
-      )
-    })
+    // it('should fail to set name if caller is not token owner', async function () {
+    //   await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+    //     otto,
+    //     deployer,
+    //     1
+    //   )
+    //   await otto.setName(0, 'king')
+    //   await expect(otto.connect(badguy).setName(0, 'king')).to.be.revertedWith(
+    //     'caller is not the owner of the token'
+    //   )
+    // })
 
-    it('should able to set name', async function () {
-      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
-        otto,
-        deployer,
-        1
-      )
-      await otto.setName(0, 'king')
-      const [name] = await otto.get(0)
-      expect(name).to.eq('king')
-    })
+    // it('should able to set name', async function () {
+    //   await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+    //     otto,
+    //     deployer,
+    //     1
+    //   )
+    //   await otto.setName(0, 'king')
+    //   const [name] = await otto.get(0)
+    //   expect(name).to.eq('king')
+    // })
 
-    it('should fail to set description if caller is not token owner', async function () {
-      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
-        otto,
-        deployer,
-        1
-      )
-      await otto.setDescription(0, 'I am king')
-      await expect(
-        otto.connect(badguy).setName(0, 'I am king')
-      ).to.be.revertedWith('caller is not the owner of the token')
-    })
+    // it('should fail to set description if caller is not token owner', async function () {
+    //   await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+    //     otto,
+    //     deployer,
+    //     1
+    //   )
+    //   await otto.setDescription(0, 'I am king')
+    //   await expect(
+    //     otto.connect(badguy).setName(0, 'I am king')
+    //   ).to.be.revertedWith('caller is not the owner of the token')
+    // })
 
-    it('should able to set description', async function () {
-      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
-        otto,
-        deployer,
-        1
-      )
-      await otto.setDescription(0, 'I am king')
-      const [, desc] = await otto.get(0)
-      expect(desc).to.eq('I am king')
-    })
+    // it('should able to set description', async function () {
+    //   await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+    //     otto,
+    //     deployer,
+    //     1
+    //   )
+    //   await otto.setDescription(0, 'I am king')
+    //   const [, desc] = await otto.get(0)
+    //   expect(desc).to.eq('I am king')
+    // })
 
     it('should fail to set if caller is not manager', async function () {
       await expect(() => otto.mint(deployer.address, 3)).to.changeTokenBalance(
