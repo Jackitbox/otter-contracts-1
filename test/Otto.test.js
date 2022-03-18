@@ -299,9 +299,22 @@ describe('Otto', function () {
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
-      it('should able to addOttolisted', async function () {
-        await portalCreator.addOttolisted(3, [dao.address])
+      it('should fail to setOttolisted if caller is not owner', async function () {
+        await expect(
+          portalCreator.connect(badguy).setOttolisted(1, [dao.address])
+        ).to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
+      it('should able to set or add ottolisted', async function () {
+        await portalCreator.setOttolisted(3, [dao.address, deployer.address])
         expect(await portalCreator.ottolisted(dao.address)).to.eq(3)
+        expect(await portalCreator.ottolisted(deployer.address)).to.eq(3)
+        await portalCreator.addOttolisted(2, [dao.address, deployer.address])
+        expect(await portalCreator.ottolisted(dao.address)).to.eq(5)
+        expect(await portalCreator.ottolisted(deployer.address)).to.eq(5)
+        await portalCreator.setOttolisted(1, [dao.address, deployer.address])
+        expect(await portalCreator.ottolisted(dao.address)).to.eq(1)
+        expect(await portalCreator.ottolisted(deployer.address)).to.eq(1)
       })
 
       it('should able to addOttolisted twice', async function () {

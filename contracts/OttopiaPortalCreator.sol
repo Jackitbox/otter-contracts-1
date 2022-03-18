@@ -88,6 +88,15 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
         devCanMint = 250;
     }
 
+    function setOttolisted(uint256 amount_, address[] memory wallets)
+        external
+        onlyOwner
+    {
+        for (uint256 i = 0; i < wallets.length; i++) {
+            ottolisted[wallets[i]] = amount_;
+        }
+    }
+
     function addOttolisted(uint256 amount_, address[] memory wallets)
         external
         onlyOwner
