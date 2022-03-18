@@ -78,7 +78,7 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
             price: 8 * 10**16 // 0.08 ETH
         });
         saleConfig[SALE_STAGE.PRE_SALE] = SaleConfig({
-            timestamp: 1647694800, // 2022-03-29T13:00:00.000Z
+            timestamp: 1647694800, // 2022-03-19T13:00:00.000Z
             price: 6 * 10**16 // 0.06 ETH
         });
         saleConfig[SALE_STAGE.PUBLIC_SALE] = SaleConfig({
