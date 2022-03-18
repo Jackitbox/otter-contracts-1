@@ -26,6 +26,7 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
     SALE_STAGE public saleStage;
     mapping(address => uint256) public ottolisted;
     mapping(SALE_STAGE => uint256) public priceOnEachStage; // in ETH
+    uint256 public devCanMint;
 
     enum SALE_STAGE {
         NOT_STARTED,
@@ -70,6 +71,7 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
         priceOnEachStage[SALE_STAGE.NOT_STARTED] = 8 * 10**16; // 0.08 ETH
         priceOnEachStage[SALE_STAGE.PRE_SALE] = 6 * 10**16; // 0.06 ETH
         priceOnEachStage[SALE_STAGE.PUBLIC_SALE] = 8 * 10**16; // 0.08 ETH
+        devCanMint = 250;
     }
 
     function setOttolisted(uint256 amount_, address[] memory ottolisted_)
@@ -112,9 +114,11 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
         WETH.transfer(dao, wethBalance - toTreasury);
     }
 
-    function giveaway(address to_, uint256 quantity_) external onlyOwner {
-        require(quantity_ > 0, 'giveaway quantity must be greater than 0');
+    function devMint(address to_, uint256 quantity_) external onlyOwner {
+        require(quantity_ > 0, 'devMint quantity must be greater than 0');
         require(quantity_ <= OTTO.totalMintable(), 'not enough tokens');
+        require(quantity_ <= devCanMint, 'not enough tokens for dev');
+        devCanMint -= quantity_;
 
         uint256 maxBatch = OTTO.maxBatch();
         uint256 round = quantity_ / maxBatch;

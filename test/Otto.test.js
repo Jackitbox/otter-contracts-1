@@ -329,22 +329,41 @@ describe('Otto', function () {
     })
 
     describe('ANY_STAGE', function () {
-      it('should fail to give otto away if caller is not owner', async function () {
+      it('should fail to devMint if caller is not owner', async function () {
         await expect(
-          portalCreator.connect(badguy).giveaway(dao.address, 1)
+          portalCreator.connect(badguy).devMint(dao.address, 1)
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
-      it('should fail to give 0 otto away', async function () {
-        await expect(portalCreator.giveaway(dao.address, 0)).to.be.revertedWith(
-          'giveaway quantity must be greater than 0'
+      it('should fail to devMint 0 otto', async function () {
+        await expect(portalCreator.devMint(dao.address, 0)).to.be.revertedWith(
+          'devMint quantity must be greater than 0'
         )
       })
-      ;[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].forEach(function (amount) {
-        it(`should be able to give ${amount} ottos away`, async function () {
+
+      it('should fail to devMint 5001 otto', async function () {
+        await expect(
+          portalCreator.devMint(dao.address, 5001)
+        ).to.be.revertedWith('not enough tokens')
+      })
+
+      it('should fail to devMint more than 250 otto', async function () {
+        await expect(
+          portalCreator.devMint(dao.address, 251)
+        ).to.be.revertedWith('not enough tokens for dev')
+        await expect(() =>
+          portalCreator.devMint(dao.address, 1)
+        ).to.changeTokenBalance(otto, dao, 1)
+        await expect(
+          portalCreator.devMint(dao.address, 250)
+        ).to.be.revertedWith('not enough tokens for dev')
+      })
+      ;[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 250].forEach(function (n) {
+        it(`should be able to give ${n} ottos away`, async function () {
           await expect(() =>
-            portalCreator.giveaway(dao.address, amount)
-          ).to.changeTokenBalance(otto, dao, amount)
+            portalCreator.devMint(dao.address, n)
+          ).to.changeTokenBalance(otto, dao, n)
+          expect(await portalCreator.devCanMint()).to.eq(250 - n)
         })
       })
 
