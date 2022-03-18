@@ -8,7 +8,6 @@ import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol'
 contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
     bytes32 public constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 public constant MANAGER_ROLE = keccak256('MANAGER_ROLE');
-    uint256 public constant NUM_ATTRIBUTES = 8;
 
     string private _baseTokenURI;
     mapping(uint256 => OttoInfo) private infos;
@@ -22,9 +21,9 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         uint256 experiences;
         uint256 hungerValue;
         uint256 friendship;
-        // [STR, DEF, DEX, INT, LUK, CON, CUTE, BRS]
-        int16[NUM_ATTRIBUTES] attributes; // can be changed by level up
-        int16[NUM_ATTRIBUTES] attributeBonuses; // from traits & wearable
+        // int16[] [STR, DEF, DEX, INT, LUK, CON, CUTE, BRS, ...reserved]
+        uint256 attributes; // can be changed by level up
+        uint256 attributeBonuses; // from traits & wearable
         uint256[8] __reserved;
     }
 
@@ -129,8 +128,8 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
                 experiences: 0,
                 hungerValue: 0,
                 friendship: 0,
-                attributes: [int16(0), 0, 0, 0, 0, 0, 0, 0],
-                attributeBonuses: [int16(0), 0, 0, 0, 0, 0, 0, 0],
+                attributes: 0,
+                attributeBonuses: 0,
                 __reserved: [uint256(0), 0, 0, 0, 0, 0, 0, 0]
             });
         }
@@ -144,8 +143,8 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         uint256 experiences_,
         uint256 hungerValue_,
         uint256 friendship_,
-        int16[NUM_ATTRIBUTES] memory attributes_,
-        int16[NUM_ATTRIBUTES] memory attributeBonuses_
+        uint256 attributes_,
+        uint256 attributeBonuses_
     ) external virtual onlyManager validOttoId(tokenId_) {
         infos[tokenId_].birthday = birthday_;
         infos[tokenId_].traits = traits_;
@@ -179,8 +178,8 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
             uint256 experiences_,
             uint256 hungerValue_,
             uint256 friendship_,
-            int16[NUM_ATTRIBUTES] memory attributes_,
-            int16[NUM_ATTRIBUTES] memory attributeBonuses_
+            uint256 attributes_,
+            uint256 attributeBonuses_
         )
     {
         OttoInfo storage otto = infos[tokenId_];

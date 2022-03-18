@@ -130,8 +130,8 @@ describe('Otto', function () {
       expect(experiences).to.eq(0)
       expect(hungerValue).to.eq(0)
       expect(friendship).to.eq(0)
-      expect(attrs).to.deep.eq([0, 0, 0, 0, 0, 0, 0, 0])
-      expect(bonuses).to.deep.eq([0, 0, 0, 0, 0, 0, 0, 0])
+      expect(attrs).to.deep.eq(0)
+      expect(bonuses).to.deep.eq(0)
     })
 
     // it('should fail to set name if caller is not token owner', async function () {
@@ -195,8 +195,8 @@ describe('Otto', function () {
           3, // experiences
           4, // hungerValue
           5, // friendship
-          [6, 7, 8, 9, 10, 11, 12, 13], // attrs
-          [14, 15, 16, 17, 18, 19, 20, 21] // bonuses
+          6, // attrs
+          7 // bonuses
         )
       ).to.be.reverted
     })
@@ -215,8 +215,8 @@ describe('Otto', function () {
         3, // experiences
         4, // hungerValue
         5, // friendship
-        [6, 7, 8, 9, 10, 11, 12, 13], // attrs
-        [14, 15, 16, 17, 18, 19, 20, 21] // bonuses
+        6, // attrs
+        7 // bonuses
       )
       const [name, desc, ...got] = await otto.get(1)
       expect(name).to.eq('')
@@ -228,8 +228,8 @@ describe('Otto', function () {
         3, // experiences
         4, // hungerValue
         5, // friendship
-        [6, 7, 8, 9, 10, 11, 12, 13], // attrs
-        [14, 15, 16, 17, 18, 19, 20, 21], // bonuses
+        6, // attrs
+        7, // bonuses
       ])
     })
 
