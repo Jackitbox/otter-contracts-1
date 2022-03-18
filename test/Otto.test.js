@@ -252,6 +252,35 @@ describe('Otto', function () {
         'ERC721AUpgradeable: quantity to mint too high'
       )
     })
+
+    it('should able to encode and decode uint256 correctly', async function () {
+      const arr = Array(32).fill(0)
+      let n = 0
+      expect(await otto.U8toU256(arr)).to.eq(n)
+      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+
+      arr[0] = 1
+      n = 1
+      expect(await otto.U8toU256(arr)).to.eq(n)
+      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+
+      arr[1] = 1
+      n = 257
+      expect(await otto.U8toU256(arr)).to.eq(n)
+      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+
+      arr[2] = 1
+      n = 65793
+      expect(await otto.U8toU256(arr)).to.eq(n)
+      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+
+      arr[31] = 1
+      n = BigNumber.from(
+        '0x0100000000000000000000000000000000000000000000000000000000010101'
+      )
+      expect(await otto.U8toU256(arr)).to.eq(n)
+      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+    })
   })
 
   describe('OttopiaPortalCreator', function () {

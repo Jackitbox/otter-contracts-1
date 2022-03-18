@@ -213,6 +213,27 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
     {
         return super.supportsInterface(interfaceId);
     }
+
+    function U8toU256(uint8[32] memory arr_)
+        public
+        pure
+        returns (uint256 traits_)
+    {
+        traits_ = 0;
+        for (uint8 i = 0; i < 32; i++) {
+            traits_ = (traits_ << 8) | arr_[31 - i];
+        }
+    }
+
+    function U256toU8(uint256 traits_)
+        public
+        pure
+        returns (uint8[32] memory arr_)
+    {
+        for (uint8 i = 0; i < 32; i++) {
+            arr_[i] = uint8(traits_ >> (i * 8));
+        }
+    }
 }
 
 contract OttoV2 is Otto {
