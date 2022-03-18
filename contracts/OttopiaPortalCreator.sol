@@ -23,9 +23,8 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
     address treasury;
     address public dao;
 
-    SALE_STAGE public saleStage;
     mapping(address => uint256) public ottolisted;
-    mapping(SALE_STAGE => uint256) public priceOnEachStage; // in ETH
+    mapping(SALE_STAGE => SaleConfig) public saleConfig; // in ETH
     uint256 public devCanMint;
 
     enum SALE_STAGE {
@@ -34,14 +33,19 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
         PUBLIC_SALE
     }
 
+    struct SaleConfig {
+        uint256 timestamp;
+        uint256 price;
+    }
+
     modifier callerIsUser() {
         require(tx.origin == msg.sender, 'The caller is another contract');
         _;
     }
 
     modifier quantityAllowedToMintOnEachStage(uint256 quantity_) {
-        require(saleStage != SALE_STAGE.NOT_STARTED, 'sale not started yet');
-        if (saleStage == SALE_STAGE.PRE_SALE) {
+        require(saleStage() != SALE_STAGE.NOT_STARTED, 'sale not started yet');
+        if (saleStage() == SALE_STAGE.PRE_SALE) {
             require(
                 quantity_ <= ottolisted[msg.sender],
                 'you are not allowed to mint with this amount'
@@ -68,9 +72,19 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
         wethPriceFeed = IEACAggregatorProxy(wethPriceFeed_);
         treasury = treasury_;
         dao = dao_;
-        priceOnEachStage[SALE_STAGE.NOT_STARTED] = 8 * 10**16; // 0.08 ETH
-        priceOnEachStage[SALE_STAGE.PRE_SALE] = 6 * 10**16; // 0.06 ETH
-        priceOnEachStage[SALE_STAGE.PUBLIC_SALE] = 8 * 10**16; // 0.08 ETH
+
+        saleConfig[SALE_STAGE.NOT_STARTED] = SaleConfig({
+            timestamp: 0,
+            price: 8 * 10**16 // 0.08 ETH
+        });
+        saleConfig[SALE_STAGE.PRE_SALE] = SaleConfig({
+            timestamp: 1647694800, // 2022-03-29T13:00:00.000Z
+            price: 6 * 10**16 // 0.06 ETH
+        });
+        saleConfig[SALE_STAGE.PUBLIC_SALE] = SaleConfig({
+            timestamp: 1647781200, // 2022-03-20T13:00:00.000Z
+            price: 8 * 10**16 // 0.08 ETH
+        });
         devCanMint = 250;
     }
 
@@ -83,20 +97,13 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
         }
     }
 
-    function adjustPrice(SALE_STAGE stage_, uint256 price_) external onlyOwner {
-        priceOnEachStage[stage_] = price_;
-    }
-
-    function stopSale() external onlyOwner {
-        saleStage = SALE_STAGE.NOT_STARTED;
-    }
-
-    function startPreSale() external onlyOwner {
-        saleStage = SALE_STAGE.PRE_SALE;
-    }
-
-    function startPublicSale() external onlyOwner {
-        saleStage = SALE_STAGE.PUBLIC_SALE;
+    function adjustSaleConfig(
+        SALE_STAGE stage_,
+        uint256 timestamp_,
+        uint256 price_
+    ) external onlyOwner {
+        saleConfig[stage_].timestamp = timestamp_;
+        saleConfig[stage_].price = price_;
     }
 
     function emergencyWithdraw(address token_) external onlyOwner {
@@ -159,8 +166,20 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
         }
     }
 
+    function saleStage() public view returns (SALE_STAGE stage_) {
+        if (block.timestamp >= saleConfig[SALE_STAGE.PUBLIC_SALE].timestamp) {
+            return SALE_STAGE.PUBLIC_SALE;
+        } else if (
+            block.timestamp >= saleConfig[SALE_STAGE.PRE_SALE].timestamp
+        ) {
+            return SALE_STAGE.PRE_SALE;
+        } else {
+            return SALE_STAGE.NOT_STARTED;
+        }
+    }
+
     function priceInWETH() public view returns (uint256 price_) {
-        return priceOnEachStage[saleStage];
+        return saleConfig[saleStage()].price;
     }
 
     function priceInCLAM() public view returns (uint256 price_) {

@@ -1,4 +1,4 @@
-const { ethers, upgrades } = require('hardhat')
+const { ethers, upgrades, network } = require('hardhat')
 const { parseEther, parseUnits } = require('@ethersproject/units')
 const { BigNumber } = require('@ethersproject/bignumber')
 
@@ -378,40 +378,26 @@ describe('Otto', function () {
         expect(await portalCreator.ottolisted(dao.address)).to.eq(3)
       })
 
-      it('should fail to adjustPrice if caller is not owner', async function () {
+      it('should fail to adjustSaleConfig if caller is not owner', async function () {
         await expect(
-          portalCreator.connect(badguy).adjustPrice(0, 123)
+          portalCreator.connect(badguy).adjustSaleConfig(0, 123, 456)
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
-      it('should fail to stopSale if caller is not owner', async function () {
-        await expect(
-          portalCreator.connect(badguy).stopSale()
-        ).to.be.revertedWith('Ownable: caller is not the owner')
-      })
-
-      it('should fail to startPreSale if caller is not owner', async function () {
-        await expect(
-          portalCreator.connect(badguy).startPreSale()
-        ).to.be.revertedWith('Ownable: caller is not the owner')
-      })
-
-      it('should fail to startPublicSale if caller is not owner', async function () {
-        await expect(
-          portalCreator.connect(badguy).startPublicSale()
-        ).to.be.revertedWith('Ownable: caller is not the owner')
-      })
-
-      it('should able to adjust price', async function () {
-        await portalCreator.adjustPrice(0, 123)
-        expect(await portalCreator.priceInWETH()).to.eq(123)
-        await portalCreator.startPreSale()
-        await portalCreator.adjustPrice(1, 456)
-        expect(await portalCreator.priceInWETH()).to.eq(456)
-        await portalCreator.startPublicSale()
-        await portalCreator.adjustPrice(2, 789)
-        expect(await portalCreator.priceInWETH()).to.eq(789)
-        await expect(portalCreator.adjustPrice(3, 123)).to.be.reverted
+      it('should able to adjustSaleConfig', async function () {
+        await portalCreator.adjustSaleConfig(0, 111, 123)
+        let cfg = await portalCreator.saleConfig(0)
+        expect(cfg.timestamp).to.eq(111)
+        expect(cfg.price).to.eq(123)
+        await portalCreator.adjustSaleConfig(1, 222, 456)
+        cfg = await portalCreator.saleConfig(1)
+        expect(cfg.timestamp).to.eq(222)
+        expect(cfg.price).to.eq(456)
+        await portalCreator.adjustSaleConfig(2, 333, 789)
+        cfg = await portalCreator.saleConfig(2)
+        expect(cfg.timestamp).to.eq(333)
+        expect(cfg.price).to.eq(789)
+        await expect(portalCreator.saleConfig(3)).to.be.reverted
       })
 
       it('should fail to emergencyWithdraw if caller is not owner', async function () {
@@ -464,8 +450,11 @@ describe('Otto', function () {
     })
 
     describe('PRE_SALE', function () {
-      beforeEach(async function () {
-        await portalCreator.startPreSale()
+      before(async function () {
+        await network.provider.send('evm_setNextBlockTimestamp', [
+          new Date('2022-03-19T13:00:00Z').getTime() / 1000,
+        ])
+        await network.provider.send('evm_mine')
       })
 
       it('price in weth', async function () {
@@ -549,8 +538,11 @@ describe('Otto', function () {
     })
 
     describe('PUBLIC_SALE', function () {
-      beforeEach(async function () {
-        await portalCreator.startPublicSale()
+      before(async function () {
+        await network.provider.send('evm_setNextBlockTimestamp', [
+          new Date('2022-03-20T13:00:00Z').getTime() / 1000,
+        ])
+        await network.provider.send('evm_mine')
       })
 
       it('price in weth', async function () {
