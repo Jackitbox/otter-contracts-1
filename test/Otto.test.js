@@ -255,6 +255,10 @@ describe('Otto', function () {
     })
 
     describe('ANY_STAGE', function () {
+      it('should able to get clamPerWETH', async function () {
+        expect(await portalCreator.clamPerWETH()).to.eq(parseUnits('50', 9))
+      })
+
       it('should fail to devMint if caller is not owner', async function () {
         await expect(
           portalCreator.connect(badguy).devMint(dao.address, 1)

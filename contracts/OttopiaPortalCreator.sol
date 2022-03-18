@@ -192,6 +192,14 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
     }
 
     function priceInCLAM() public view returns (uint256 price_) {
+        price_ = (priceInWETH() * clamPerWETH()) / 10**WETH.decimals();
+        // console.log('price in clam: %s', price_);
+        // 30% off
+        price_ = _calcPercentage(price_, 7000);
+        // console.log('price with discount in clam: %s', price_);
+    }
+
+    function clamPerWETH() public view returns (uint256 clamPerWETH_) {
         // mai decimals = 18
         // usd decimals = 8
         // clam decimals = 9
@@ -202,17 +210,11 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
         // console.log('usdPerWETH %s', usdPerWETH);
         uint256 maiPerCLAM = _maiPerCLAM();
         // console.log('maiPerCLAM %s', maiPerCLAM);
-        uint256 clamPerWETH = (_toDecimal(
-            usdPerWETH,
-            wethPriceFeed.decimals()
-        ) * 10**CLAM.decimals()) / _toDecimal(maiPerCLAM, MAI.decimals());
-        // console.log('clamPerWETH %s', clamPerWETH);
-
-        price_ = (priceInWETH() * clamPerWETH) / 10**WETH.decimals();
-        // console.log('price in clam: %s', price_);
-        // 30% off
-        price_ = _calcPercentage(price_, 7000);
-        // console.log('price with discount in clam: %s', price_);
+        clamPerWETH_ =
+            (_toDecimal(usdPerWETH, wethPriceFeed.decimals()) *
+                10**CLAM.decimals()) /
+            _toDecimal(maiPerCLAM, MAI.decimals());
+        // console.log('clamPerWETH %s', clamPerWETH_);
     }
 
     function _maiPerCLAM() private view returns (uint256 price_) {
