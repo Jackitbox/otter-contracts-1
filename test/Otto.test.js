@@ -293,15 +293,21 @@ describe('Otto', function () {
         })
       })
 
-      it('should fail to setOttolisted if caller is not owner', async function () {
+      it('should fail to addOttolisted if caller is not owner', async function () {
         await expect(
-          portalCreator.connect(badguy).setOttolisted(1, [dao.address])
+          portalCreator.connect(badguy).addOttolisted(1, [dao.address])
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
-      it('should able to setOttolisted', async function () {
-        await portalCreator.setOttolisted(3, [dao.address])
+      it('should able to addOttolisted', async function () {
+        await portalCreator.addOttolisted(3, [dao.address])
         expect(await portalCreator.ottolisted(dao.address)).to.eq(3)
+      })
+
+      it('should able to addOttolisted twice', async function () {
+        await portalCreator.addOttolisted(3, [dao.address])
+        await portalCreator.addOttolisted(3, [dao.address])
+        expect(await portalCreator.ottolisted(dao.address)).to.eq(6)
       })
 
       it('should fail to adjustSaleConfig if caller is not owner', async function () {
@@ -415,7 +421,7 @@ describe('Otto', function () {
 
       describe('ottolisted', function () {
         beforeEach(async function () {
-          await portalCreator.setOttolisted(3, [deployer.address])
+          await portalCreator.addOttolisted(3, [deployer.address])
         })
         ;[1, 2, 3].forEach(function (quantity) {
           it(`should able to mint ${quantity} otto in weth`, async function () {
