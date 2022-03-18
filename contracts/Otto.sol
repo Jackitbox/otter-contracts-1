@@ -93,22 +93,6 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         _revokeRole(MANAGER_ROLE, manager_);
     }
 
-    // function setName(uint256 tokenId_, string memory name_)
-    //     external
-    //     validOttoId(tokenId_)
-    //     onlyOttoOwner(tokenId_)
-    // {
-    //     infos[tokenId_].name = name_;
-    // }
-
-    // function setDescription(uint256 tokenId_, string memory desc_)
-    //     external
-    //     validOttoId(tokenId_)
-    //     onlyOttoOwner(tokenId_)
-    // {
-    //     infos[tokenId_].description = desc_;
-    // }
-
     function mint(address to_, uint256 quantity_)
         external
         virtual
@@ -234,14 +218,3 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         }
     }
 }
-
-// contract OttoV2 is Otto {
-//     function spo(uint256 maxBatchSize_, uint256 collectionSize_)
-//         public
-//         virtual
-//         onlyAdmin
-//     {
-//         maxBatchSize = maxBatchSize_;
-//         collectionSize = collectionSize_;
-//     }
-// }
