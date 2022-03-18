@@ -125,7 +125,7 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
                 description: '',
                 birthday: 0,
                 traits: 0,
-                level: 1,
+                level: 0, // 0 means portal, > 1 means otto
                 experiences: 0,
                 hungerValue: 0,
                 friendship: 0,

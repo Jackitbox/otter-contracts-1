@@ -126,7 +126,7 @@ describe('Otto', function () {
       expect(desc).to.eq('')
       expect(birthday).to.eq(0)
       expect(traits).to.eq(0)
-      expect(level).to.eq(1)
+      expect(level).to.eq(0)
       expect(experiences).to.eq(0)
       expect(hungerValue).to.eq(0)
       expect(friendship).to.eq(0)
@@ -306,13 +306,13 @@ describe('Otto', function () {
         ).to.be.revertedWith('Ownable: caller is not the owner')
       })
 
-      it.only('should fail to give 0 otto away', async function () {
+      it('should fail to give 0 otto away', async function () {
         await expect(portalCreator.giveaway(dao.address, 0)).to.be.revertedWith(
           'giveaway quantity must be greater than 0'
         )
       })
       ;[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].forEach(function (amount) {
-        it.only(`should be able to give ${amount} ottos away`, async function () {
+        it(`should be able to give ${amount} ottos away`, async function () {
           await expect(() =>
             portalCreator.giveaway(dao.address, amount)
           ).to.changeTokenBalance(otto, dao, amount)
