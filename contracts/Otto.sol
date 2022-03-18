@@ -10,7 +10,7 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
     bytes32 public constant MANAGER_ROLE = keccak256('MANAGER_ROLE');
 
     string private _baseTokenURI;
-    mapping(uint256 => OttoInfo) private infos;
+    mapping(uint256 => OttoInfo) public infos;
 
     struct OttoInfo {
         string name;
