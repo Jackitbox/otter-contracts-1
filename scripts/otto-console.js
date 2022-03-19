@@ -25,6 +25,8 @@ await (
 
 let ottoAddr = '0xd3bC207ffA860B389D2EC35075605147c2A98670'
 let portalCreatorAddr = '0xA2B66209A3872257F4FC2532bF35138f466f13ea'
+ottoAddr = '0xe610Bf44747B9847C8B90Ff051acbCb6A938Ce91'
+portalCreatorAddr = '0x9537768123032eFcdE62c1b1052EFED318Cd0DbB'
 
 let OTTO = await ethers.getContractFactory('Otto')
 let otto = OTTO.attach(ottoAddr)
@@ -39,4 +41,7 @@ await network.provider.send('evm_setNextBlockTimestamp', [
 ])
 await network.provider.send('evm_mine')
 
+await (
+  await otto.setBaseURI('https://otter-api-pr-14.herokuapp.com/ottos/metadata/')
+).wait()
 await (await portalCreator.devMint(deployer.address, 1)).wait()

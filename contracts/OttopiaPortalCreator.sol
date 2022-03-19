@@ -5,6 +5,7 @@ pragma solidity 0.8.9;
 import './interfaces/IOtto.sol';
 import './interfaces/IERC20.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 
 interface IEACAggregatorProxy {
@@ -13,7 +14,7 @@ interface IEACAggregatorProxy {
     function decimals() external view returns (uint8);
 }
 
-contract OttopiaPortalCreator is OwnableUpgradeable {
+contract OttopiaPortalCreator is OwnableUpgradeable, UUPSUpgradeable {
     IOtto public OTTO;
     IERC20 public WETH;
     IERC20 public CLAM;
@@ -244,4 +245,6 @@ contract OttopiaPortalCreator is OwnableUpgradeable {
     {
         return (price_ * percentage_) / 10000;
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 }

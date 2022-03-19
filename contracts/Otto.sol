@@ -45,8 +45,14 @@ pragma solidity 0.8.9;
 import './interfaces/IOtto.sol';
 import './libraries/ERC721AUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
+contract Otto is
+    ERC721AUpgradeable,
+    AccessControlUpgradeable,
+    UUPSUpgradeable,
+    IOtto
+{
     bytes32 public constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 public constant MANAGER_ROLE = keccak256('MANAGER_ROLE');
 
@@ -223,4 +229,6 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
             arr_[i] = uint8(traits_ >> (i * 8));
         }
     }
+
+    function _authorizeUpgrade(address) internal override onlyAdmin {}
 }

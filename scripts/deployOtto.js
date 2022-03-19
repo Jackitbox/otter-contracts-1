@@ -8,9 +8,13 @@ async function main() {
     '5000', // collectionSize
   ]
   let OTTO = await ethers.getContractFactory('Otto')
-  let otto = await upgrades.deployProxy(OTTO, ottoArgs)
+  let otto = await upgrades.deployProxy(OTTO, ottoArgs, { kind: 'uups' })
   await otto.deployed()
+  let ottoImplAddr = await upgrades.erc1967.getImplementationAddress(
+    otto.address
+  )
   console.log('otto: ', otto.address)
+  console.log('ottoImpl: ', ottoImplAddr)
 
   let portalCreatorArgs = [
     otto.address, // OTTO
@@ -23,19 +27,22 @@ async function main() {
   let PORTALCREATOR = await ethers.getContractFactory('OttopiaPortalCreator')
   let portalCreator = await upgrades.deployProxy(
     PORTALCREATOR,
-    portalCreatorArgs
+    portalCreatorArgs,
+    { kind: 'uups' }
   )
   await portalCreator.deployed()
+  let portalCreatorImplAddr = await upgrades.erc1967.getImplementationAddress(
+    portalCreator.address
+  )
   console.log('portal: ', portalCreator.address)
+  console.log('portalImpl: ', portalCreatorImplAddr)
 
-  // await hre.run('verify:verify', {
-  //   address: otto.address,
-  //   constructorArguments: ottoArgs,
-  // })
-  // await hre.run('verify:verify', {
-  //   address: portalCreator.address,
-  //   constructorArguments: portalCreatorArgs,
-  // })
+  console.log(`yarn hardhat verify ${ottoImplAddr} "${ottoArgs.join(' ')}"`)
+  console.log(
+    `yarn hardhat verify ${portalCreatorImplAddr} "${portalCreatorArgs.join(
+      ' '
+    )}"`
+  )
 }
 
 main()

@@ -17,16 +17,24 @@ describe('Otto', function () {
   const zeroAddress = '0x0000000000000000000000000000000000000000'
   const baseURI = 'http://localhost:8080/otto/metadata/'
 
+  before(function () {
+    upgrades.silenceWarnings()
+  })
+
   beforeEach(async function () {
     ;[deployer, dao, badguy, treasury] = await ethers.getSigners()
 
     const OTTO = await ethers.getContractFactory('Otto')
-    otto = await upgrades.deployProxy(OTTO, [
-      'Otto',
-      'OTTO',
-      6, // maxBatchSize
-      5000, // maxOttos
-    ])
+    otto = await upgrades.deployProxy(
+      OTTO,
+      [
+        'Otto',
+        'OTTO',
+        6, // maxBatchSize
+        5000, // maxOttos
+      ],
+      { kind: 'uups' }
+    )
     await otto.deployed()
 
     expect(await otto.name()).to.eq('Otto')
@@ -46,12 +54,16 @@ describe('Otto', function () {
 
     it('should fail to mint more than', async function () {
       const OTTO = await ethers.getContractFactory('Otto')
-      const otto = await upgrades.deployProxy(OTTO, [
-        'Otto',
-        'OTTO',
-        6, // maxBatchSize
-        8, // maxOttos
-      ])
+      const otto = await upgrades.deployProxy(
+        OTTO,
+        [
+          'Otto',
+          'OTTO',
+          6, // maxBatchSize
+          8, // maxOttos
+        ],
+        { kind: 'uups' }
+      )
       await otto.deployed()
       await expect(() => otto.mint(deployer.address, 6)).to.changeTokenBalance(
         otto,
