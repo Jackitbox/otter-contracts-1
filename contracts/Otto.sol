@@ -57,15 +57,13 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
         string name;
         string description;
         uint256 birthday;
-        uint256 traits;
-        uint256 level;
-        uint256 experiences;
-        uint256 hungerValue;
-        uint256 friendship;
+        uint256 traits; // uint8 [...]
+        uint256 values; // uint32 [level, experiences, hungerValue, friendship, ...reserved]
         // int16[] [STR, DEF, DEX, INT, LUK, CON, CUTE, BRS, ...reserved]
         uint256 attributes; // can be changed by level up
         uint256 attributeBonuses; // from traits & wearable
-        uint256[8] __reserved;
+        uint256 flags; // bool [summoned, cantBeTransferred, ...reserved]
+        uint256[6] __reserved;
     }
 
     modifier onlyAdmin() {
@@ -149,36 +147,34 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
                 description: '',
                 birthday: 0,
                 traits: 0,
-                level: 0, // 0 means portal, > 1 means otto
-                experiences: 0,
-                hungerValue: 0,
-                friendship: 0,
+                values: 0,
                 attributes: 0,
                 attributeBonuses: 0,
-                __reserved: [uint256(0), 0, 0, 0, 0, 0, 0, 0]
+                flags: 0,
+                __reserved: [uint256(0), 0, 0, 0, 0, 0]
             });
         }
     }
 
     function set(
+        string memory name_,
+        string memory description_,
         uint256 tokenId_,
         uint256 birthday_,
         uint256 traits_,
-        uint256 level_,
-        uint256 experiences_,
-        uint256 hungerValue_,
-        uint256 friendship_,
+        uint256 values_,
         uint256 attributes_,
-        uint256 attributeBonuses_
+        uint256 attributeBonuses_,
+        uint256 flags_
     ) external virtual onlyManager validOttoId(tokenId_) {
+        infos[tokenId_].name = name_;
+        infos[tokenId_].description = description_;
         infos[tokenId_].birthday = birthday_;
         infos[tokenId_].traits = traits_;
-        infos[tokenId_].level = level_;
-        infos[tokenId_].experiences = experiences_;
-        infos[tokenId_].hungerValue = hungerValue_;
-        infos[tokenId_].friendship = friendship_;
+        infos[tokenId_].values = values_;
         infos[tokenId_].attributes = attributes_;
         infos[tokenId_].attributeBonuses = attributeBonuses_;
+        infos[tokenId_].flags = flags_;
     }
 
     function setBaseURI(string calldata baseURI) external onlyAdmin {
@@ -187,37 +183,6 @@ contract Otto is ERC721AUpgradeable, AccessControlUpgradeable, IOtto {
 
     function _baseURI() internal view virtual override returns (string memory) {
         return _baseTokenURI;
-    }
-
-    function get(uint256 tokenId_)
-        external
-        view
-        virtual
-        validOttoId(tokenId_)
-        returns (
-            string memory name_,
-            string memory desc_,
-            uint256 birthday_,
-            uint256 traits_,
-            uint256 level_,
-            uint256 experiences_,
-            uint256 hungerValue_,
-            uint256 friendship_,
-            uint256 attributes_,
-            uint256 attributeBonuses_
-        )
-    {
-        OttoInfo storage otto = infos[tokenId_];
-        name_ = otto.name;
-        desc_ = otto.description;
-        birthday_ = otto.birthday;
-        traits_ = otto.traits;
-        level_ = otto.level;
-        experiences_ = otto.experiences;
-        hungerValue_ = otto.hungerValue;
-        friendship_ = otto.friendship;
-        attributes_ = otto.attributes;
-        attributeBonuses_ = otto.attributeBonuses;
     }
 
     function totalMintable() external view virtual override returns (uint256) {

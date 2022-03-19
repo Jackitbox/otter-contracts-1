@@ -81,29 +81,17 @@ describe('Otto', function () {
       expect(await otto.balanceOf(deployer.address)).to.eq(1)
       expect(await otto.tokenURI(0)).to.eq(`${baseURI}0`)
 
-      const [
-        name,
-        desc,
-        birthday,
-        traits,
-        level,
-        experiences,
-        hungerValue,
-        friendship,
-        attrs,
-        bonuses,
-      ] = await otto.get(0)
+      const [name, desc, birthday, traits, values, attrs, bonuses, flags] =
+        await otto.infos(0)
 
       expect(name).to.eq('')
       expect(desc).to.eq('')
       expect(birthday).to.eq(0)
       expect(traits).to.eq(0)
-      expect(level).to.eq(0)
-      expect(experiences).to.eq(0)
-      expect(hungerValue).to.eq(0)
-      expect(friendship).to.eq(0)
+      expect(values).to.eq(0)
       expect(attrs).to.deep.eq(0)
       expect(bonuses).to.deep.eq(0)
+      expect(flags).to.eq(0)
     })
 
     it('should fail to set if caller is not manager', async function () {
@@ -114,15 +102,15 @@ describe('Otto', function () {
       )
       await expect(
         otto.connect(badguy).set(
+          'name',
+          'desc',
           1, // tokenId
           12345, // birthday
           1, // traits
-          2, // level
-          3, // experiences
-          4, // hungerValue
-          5, // friendship
+          2, // values
           6, // attrs
-          7 // bonuses
+          7, // bonuses
+          8 // flags
         )
       ).to.be.reverted
     })
@@ -134,28 +122,26 @@ describe('Otto', function () {
         3
       )
       await otto.set(
+        'name',
+        'desc',
         1, // tokenId
         12345, // birthday
         1, // traits
-        2, // level
-        3, // experiences
-        4, // hungerValue
-        5, // friendship
+        2, // values
         6, // attrs
-        7 // bonuses
+        7, // bonuses
+        8 // flags
       )
-      const [name, desc, ...got] = await otto.get(1)
-      expect(name).to.eq('')
-      expect(desc).to.eq('')
+      const [name, desc, ...got] = await otto.infos(1)
+      expect(name).to.eq('name')
+      expect(desc).to.eq('desc')
       expect(got.map((e) => (e.toNumber ? e.toNumber() : e))).to.deep.eq([
         12345, // birthday
         1, // traits
-        2, // level
-        3, // experiences
-        4, // hungerValue
-        5, // friendship
+        2, // values
         6, // attrs
         7, // bonuses
+        8, // flags
       ])
     })
 
