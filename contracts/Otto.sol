@@ -45,11 +45,13 @@ pragma solidity 0.8.9;
 import './interfaces/IOtto.sol';
 import './libraries/ERC721AUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 contract Otto is
     ERC721AUpgradeable,
     AccessControlUpgradeable,
+    OwnableUpgradeable,
     UUPSUpgradeable,
     IOtto
 {
@@ -117,6 +119,7 @@ contract Otto is
             maxBatchSize_,
             collectionSize_
         );
+        __Ownable_init();
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(MINTER_ROLE, _msgSender());
         _setupRole(MANAGER_ROLE, _msgSender());

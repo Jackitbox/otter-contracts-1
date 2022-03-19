@@ -57,13 +57,13 @@ module.exports = {
     'polygon-mainnet': {
       url: polygonMainnetRPC,
       accounts: deployer ? [deployer] : deployer,
-      gasPrice: ethers.utils.parseUnits('50', 'gwei').toNumber(),
+      gasPrice: ethers.utils.parseUnits('70', 'gwei').toNumber(),
     },
     'polygon-mumbai': {
       url: polygonMumbaiRPC,
       accounts: dev ? [dev] : dev,
       gas: 'auto',
-      gasPrice: ethers.utils.parseUnits('1.2', 'gwei').toNumber(),
+      gasPrice: ethers.utils.parseUnits('2', 'gwei').toNumber(),
     },
     'otterclam-fork': {
       url: 'https://fork-rpc.otterclam.finance',
