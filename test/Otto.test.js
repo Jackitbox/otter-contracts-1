@@ -374,7 +374,7 @@ describe('Otto', function () {
 
     describe('NOT_STARTED', function () {
       it('price in weth', async function () {
-        expect(await portalCreator.priceInWETH()).to.eq(parseEther('0.08'))
+        expect(await portalCreator.priceInWETH()).to.eq(parseEther('0.06'))
       })
 
       it('should fail to mint when sale not started yet', async function () {
