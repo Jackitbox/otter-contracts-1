@@ -20,9 +20,27 @@ module.exports = {
     compilers: [
       {
         version: '0.8.9',
+        settings: {
+          outputSelection: {
+            '*': {
+              '*': ['storageLayout'],
+            },
+          },
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
       {
         version: '0.7.5',
+        settings: {
+          outputSelection: {
+            '*': {
+              '*': ['storageLayout'],
+            },
+          },
+        },
       },
       {
         version: '0.6.6',
@@ -39,13 +57,13 @@ module.exports = {
     'polygon-mainnet': {
       url: polygonMainnetRPC,
       accounts: deployer ? [deployer] : deployer,
-      gasPrice: ethers.utils.parseUnits('50', 'gwei').toNumber(),
+      gasPrice: ethers.utils.parseUnits('70', 'gwei').toNumber(),
     },
     'polygon-mumbai': {
       url: polygonMumbaiRPC,
       accounts: dev ? [dev] : dev,
       gas: 'auto',
-      gasPrice: ethers.utils.parseUnits('1.2', 'gwei').toNumber(),
+      gasPrice: ethers.utils.parseUnits('2', 'gwei').toNumber(),
     },
     'otterclam-fork': {
       url: 'https://fork-rpc.otterclam.finance',
@@ -54,9 +72,6 @@ module.exports = {
     hardhat: {
       chainId,
       gas: 'auto',
-      accounts: [
-        { privateKey: deployer, balance: '1000000000000000000000000' },
-      ],
       forking:
         process.env.NODE_ENV === 'test'
           ? undefined
