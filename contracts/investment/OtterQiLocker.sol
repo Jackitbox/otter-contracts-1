@@ -116,9 +116,8 @@ contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
         uint256 qiAmount = amountIn_;
         if (path_.length > 0) {
             qiAmount = convertToQI(path_, amountIn_, amountOutMin_);
-        } else {
-            treasury.manage(address(qi), amountIn_);
         }
+        treasury.manage(address(qi), qiAmount);
         address[] memory tetuQiPath = new address[](2);
         tetuQiPath[0] = address(qi);
         tetuQiPath[1] = address(tetuQi);

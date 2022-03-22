@@ -506,19 +506,19 @@
           {
             "contract": "OtterQiLocker",
             "label": "qi",
-            "type": "t_contract(IERC20)1547",
+            "type": "t_contract(IERC20)4820",
             "src": "contracts/investment/OtterQiLocker.sol:19"
           },
           {
             "contract": "OtterQiLocker",
             "label": "ocQi",
-            "type": "t_contract(IOtterClamQi)1603",
+            "type": "t_contract(IOtterClamQi)4900",
             "src": "contracts/investment/OtterQiLocker.sol:20"
           },
           {
             "contract": "OtterQiLocker",
             "label": "treasury",
-            "type": "t_contract(IOtterTreasury)1652",
+            "type": "t_contract(IOtterTreasury)4949",
             "src": "contracts/investment/OtterQiLocker.sol:21"
           },
           {
@@ -529,6 +529,115 @@
           }
         ],
         "types": {
+          "t_contract(IERC20)4820": {
+            "label": "contract IERC20"
+          },
+          "t_contract(IOtterClamQi)4900": {
+            "label": "contract IOtterClamQi"
+          },
+          "t_contract(IOtterTreasury)4949": {
+            "label": "contract IOtterTreasury"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          }
+        }
+      }
+    },
+    "12e0ea4c077a7c3d528a25a1d4e25142d10d4380baa3f915f2b86f1fa1bddcca": {
+      "address": "0x7614900a06dd77db0E674108e9d672871ced8799",
+      "txHash": "0xdda48ad7e484692157b6e872aa4d2304906ca03fc69b531560eb13ca02482882",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "contract": "LockerOwnedUpgradeable",
+            "label": "lockers",
+            "type": "t_mapping(t_address,t_bool)",
+            "src": "contracts/types/LockerOwnedUpgradeable.sol:9"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:211"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:107"
+          },
+          {
+            "contract": "OtterQiLocker",
+            "label": "qi",
+            "type": "t_contract(IERC20)1547",
+            "src": "contracts/investment/OtterQiLocker.sol:25"
+          },
+          {
+            "contract": "OtterQiLocker",
+            "label": "ocQi",
+            "type": "t_contract(IOtterClamQi)1603",
+            "src": "contracts/investment/OtterQiLocker.sol:26"
+          },
+          {
+            "contract": "OtterQiLocker",
+            "label": "treasury",
+            "type": "t_contract(IOtterTreasury)1652",
+            "src": "contracts/investment/OtterQiLocker.sol:27"
+          },
+          {
+            "contract": "OtterQiLocker",
+            "label": "dao",
+            "type": "t_address",
+            "src": "contracts/investment/OtterQiLocker.sol:28"
+          }
+        ],
+        "types": {
           "t_contract(IERC20)1547": {
             "label": "contract IERC20"
           },
@@ -536,6 +645,115 @@
             "label": "contract IOtterClamQi"
           },
           "t_contract(IOtterTreasury)1652": {
+            "label": "contract IOtterTreasury"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          }
+        }
+      }
+    },
+    "1d25ba4b50d4b65afdd29bf5c66c03be96335e4a9981217c51052c9582709652": {
+      "address": "0xe5E9546b2e9E8D4f153D76363E1a987a96301310",
+      "txHash": "0x582046fc694fa979978e30d37f20b97931b8d77cbca5986b81b74c6f749679f8",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "contract": "LockerOwnedUpgradeable",
+            "label": "lockers",
+            "type": "t_mapping(t_address,t_bool)",
+            "src": "contracts/types/LockerOwnedUpgradeable.sol:9"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:211"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:107"
+          },
+          {
+            "contract": "OtterQiLocker",
+            "label": "qi",
+            "type": "t_contract(IERC20)4756",
+            "src": "contracts/investment/OtterQiLocker.sol:25"
+          },
+          {
+            "contract": "OtterQiLocker",
+            "label": "ocQi",
+            "type": "t_contract(IOtterClamQi)4836",
+            "src": "contracts/investment/OtterQiLocker.sol:26"
+          },
+          {
+            "contract": "OtterQiLocker",
+            "label": "treasury",
+            "type": "t_contract(IOtterTreasury)4885",
+            "src": "contracts/investment/OtterQiLocker.sol:27"
+          },
+          {
+            "contract": "OtterQiLocker",
+            "label": "dao",
+            "type": "t_address",
+            "src": "contracts/investment/OtterQiLocker.sol:28"
+          }
+        ],
+        "types": {
+          "t_contract(IERC20)4756": {
+            "label": "contract IERC20"
+          },
+          "t_contract(IOtterClamQi)4836": {
+            "label": "contract IOtterClamQi"
+          },
+          "t_contract(IOtterTreasury)4885": {
             "label": "contract IOtterTreasury"
           },
           "t_address": {

@@ -15,17 +15,17 @@ let deployer = await ethers.getSigner(
   '0x63B0fB7FE68342aFad3D63eF743DE4A74CDF462B'
 )
 
-const TetuGovernance = '0xcc16d636dd05b52ff1d8b9ce09b09bc62b11412b'
-await hre.network.provider.request({
-  method: 'hardhat_impersonateAccount',
-  params: [TetuGovernance],
-})
-let tetuGovernance = await ethers.getSigner(TetuGovernance)
-let tetuController = new ethers.Contract(
-  '0x6678814c273d5088114b6e40cc49c8db04f9bc29',
-  require('./scripts/abi/TetuController.json'),
-  tetuGovernance
-)
+// const TetuGovernance = '0xcc16d636dd05b52ff1d8b9ce09b09bc62b11412b'
+// await hre.network.provider.request({
+//   method: 'hardhat_impersonateAccount',
+//   params: [TetuGovernance],
+// })
+// let tetuGovernance = await ethers.getSigner(TetuGovernance)
+// let tetuController = new ethers.Contract(
+//   '0x6678814c273d5088114b6e40cc49c8db04f9bc29',
+//   require('./scripts/abi/TetuController.json'),
+//   tetuGovernance
+// )
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
 const QI = '0x580A84C73811E1839F75d86d75d88cCa0c241fF4'
