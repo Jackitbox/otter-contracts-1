@@ -11,10 +11,16 @@ import '../interfaces/IOtterClamQi.sol';
 
 import '../types/LockerOwnedUpgradeable.sol';
 
+interface ISmartVault is IERC20 {
+    function depositAndInvest(uint256 amount) external;
+}
+
 contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
     event Lock(uint256 amount, uint256 blockNumber);
     event Leave(uint256 amount);
     event Harvest(uint256 amount);
+    event ConvertToQi(address token, uint256 amountIn, uint256 amountOut);
+    event ConvertToTetuQi(address token, uint256 amountIn, uint256 amountOut);
 
     IERC20 public qi;
     IOtterClamQi public ocQi;
@@ -71,7 +77,7 @@ contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
         address[] memory path_,
         uint256 amountIn_,
         uint256 amountOutMin_
-    ) external onlyLocker {
+    ) public onlyLocker returns (uint256) {
         address source = path_[0];
         treasury.manage(source, amountIn_);
         address[] memory path = new address[](path_.length + 1);
@@ -80,14 +86,78 @@ contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
         }
         path[path_.length] = address(qi);
         IERC20(source).approve(QuickSwapRouter, amountIn_);
-        IUniswapV2Router02(QuickSwapRouter).swapExactTokensForTokens(
+        uint256[] memory amounts = IUniswapV2Router02(QuickSwapRouter)
+            .swapExactTokensForTokens(
+                amountIn_,
+                amountOutMin_,
+                path,
+                address(treasury),
+                block.timestamp
+            );
+        emit ConvertToQi(source, amountIn_, amounts[amounts.length - 1]);
+        return amounts[amounts.length - 1];
+    }
+
+    // ===== TetuQi =====
+
+    ISmartVault public constant tetuQi =
+        ISmartVault(0x4Cd44ced63d9a6FEF595f6AD3F7CED13fCEAc768);
+    ISmartVault public constant xTetuQi =
+        ISmartVault(0x8f1505C8F3B45Cb839D09c607939095a4195738e);
+    IUniswapV2Router02 public constant tetuRouter =
+        IUniswapV2Router02(0x736FD9EabB15776A3adfea1B975c868F72A29d14);
+
+    function convertToTetuQi(
+        address[] memory path_,
+        uint256 amountIn_,
+        uint256 amountOutMin_,
+        bool stake
+    ) external onlyLocker {
+        uint256 qiAmount = amountIn_;
+        if (path_.length > 0) {
+            qiAmount = convertToQI(path_, amountIn_, amountOutMin_);
+        } else {
+            treasury.manage(address(qi), amountIn_);
+        }
+        address[] memory tetuQiPath = new address[](2);
+        tetuQiPath[0] = address(qi);
+        tetuQiPath[1] = address(tetuQi);
+        uint256[] memory swapTetuQiOutput = tetuRouter.getAmountsOut(
+            qiAmount,
+            tetuQiPath
+        );
+        if (swapTetuQiOutput[1] > qiAmount) {
+            qi.approve(address(tetuRouter), qiAmount);
+            uint256[] memory tetuQiOutput = tetuRouter.swapExactTokensForTokens(
+                qiAmount,
+                swapTetuQiOutput[1],
+                tetuQiPath,
+                address(this),
+                block.timestamp
+            );
+            qiAmount = tetuQiOutput[1];
+        } else {
+            qi.approve(address(tetuQi), qiAmount);
+            tetuQi.depositAndInvest(qiAmount);
+        }
+        if (stake) {
+            tetuQi.approve(address(xTetuQi), qiAmount);
+            xTetuQi.depositAndInvest(qiAmount);
+            xTetuQi.transfer(
+                address(treasury),
+                xTetuQi.balanceOf(address(this))
+            );
+        } else {
+            tetuQi.transfer(address(treasury), tetuQi.balanceOf(address(this)));
+        }
+        emit ConvertToTetuQi(
+            path_.length > 0 ? path_[0] : address(qi),
             amountIn_,
-            amountOutMin_,
-            path,
-            address(treasury),
-            block.timestamp
+            qiAmount
         );
     }
+
+    // ===== Emgerency =====
 
     function emergencyWithdraw(address token_) external onlyOwner {
         uint256 balance = IERC20(token_).balanceOf(address(this));

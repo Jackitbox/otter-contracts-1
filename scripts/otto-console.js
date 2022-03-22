@@ -1,19 +1,23 @@
 const { ethers } = require('hardhat')
 
 let deployer = await ethers.getSigner()
-let devAddr = 'CHANGE_ME'
 let daoAddress = '0x929a27c46041196e1a49c7b459d63ec9a20cd879'
-await (
-  await deployer.sendTransaction({
-    to: daoAddress,
-    value: ethers.utils.parseEther('0.5'),
-  })
-).wait()
-let daoAddress = '0x929a27c46041196e1a49c7b459d63ec9a20cd879'
+await deployer.sendTransaction({
+  to: daoAddress,
+  value: ethers.utils.parseEther('0.5'),
+})
 await hre.network.provider.request({
   method: 'hardhat_impersonateAccount',
   params: [daoAddress],
 })
+
+let devAddr = '0x016bc76cd93b6e2e026ba3130b1dc30098ebfe9e'
+await hre.network.provider.request({
+  method: 'hardhat_impersonateAccount',
+  params: [devAddr],
+})
+let dev = await ethers.getSigner(devAddr)
+
 let dao = await ethers.getSigner(daoAddress)
 let clam = await ethers.getContractAt(
   'ERC20',
@@ -26,16 +30,16 @@ await (
 let ottoAddr = '0x6e8A9Cb6B1E73e9fCe3FD3c68b5af9728F708eB7'
 let portalCreatorAddr = '0xCb8Ba0c08e746CA6fa79fe535580f89A8eC082C2'
 
-let OTTO = await ethers.getContractFactory('Otto')
-let otto = OTTO.attach(ottoAddr)
-let PORTALCREATOR = await ethers.getContractFactory('OttopiaPortalCreator')
-let portalCreator = PORTALCREATOR.attach(portalCreatorAddr)
+let otto = (await ethers.getContractAt('Otto', ottoAddr)).connect(dev)
+let portalCreator = (
+  await ethers.getContractAt('OttopiaPortalCreator', portalCreatorAddr)
+).connect(dev)
 
 await (await otto.grantMinter(portalCreatorAddr)).wait()
 await (await portalCreator.setOttolisted(3, [devAddr])).wait()
 
 await network.provider.send('evm_setNextBlockTimestamp', [
-  new Date('2022-03-19T13:00:00Z').getTime() / 1000,
+  new Date('2022-03-20T13:00:00Z').getTime() / 1000,
 ])
 await network.provider.send('evm_mine')
 
