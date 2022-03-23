@@ -79,6 +79,9 @@ module.exports = {
           ? undefined
           : { url: polygonMainnetRPC },
     },
+    localhost: {
+      accounts: deployer ? [deployer] : [],
+    },
   },
   etherscan: {
     apiKey: etherscanApiKey,
