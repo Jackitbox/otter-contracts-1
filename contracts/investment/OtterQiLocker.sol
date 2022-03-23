@@ -140,8 +140,8 @@ contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
             tetuQi.depositAndInvest(qiAmount);
         }
         if (stake) {
-            tetuQi.approve(address(xTetuQi), qiAmount);
-            xTetuQi.depositAndInvest(qiAmount);
+            tetuQi.approve(address(xTetuQi), tetuQi.balanceOf(address(this)));
+            xTetuQi.depositAndInvest(tetuQi.balanceOf(address(this)));
             xTetuQi.transfer(
                 address(treasury),
                 xTetuQi.balanceOf(address(this))

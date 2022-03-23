@@ -26,12 +26,11 @@ let deployer = await ethers.getSigner(
 //   require('./scripts/abi/TetuController.json'),
 //   tetuGovernance
 // )
+// await tetuController.changeWhiteListStatus([QI_LOCKER], true)
 
 const zeroAddress = '0x0000000000000000000000000000000000000000'
 const QI = '0x580A84C73811E1839F75d86d75d88cCa0c241fF4'
 const QI_LOCKER = '0x69f6c4Fa150F9F0b3037612CF8FadDAeDbd46Bb8'
-
-await tetuController.changeWhiteListStatus([QI_LOCKER], true)
 
 let OtterQiLocker = await ethers.getContractFactory('OtterQiLocker', deployer)
 let upgraded = await upgrades.upgradeProxy(QI_LOCKER, OtterQiLocker)
