@@ -72,6 +72,8 @@ module.exports = {
     hardhat: {
       chainId,
       gas: 'auto',
+      initialDate:
+        process.env.NODE_ENV === 'test' ? '2021-11-02T00:00:00Z' : undefined,
       forking:
         process.env.NODE_ENV === 'test'
           ? undefined

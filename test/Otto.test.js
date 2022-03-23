@@ -25,7 +25,8 @@ describe('Otto', function () {
     ;[deployer, dao, badguy, treasury] = await ethers.getSigners()
 
     const OTTO = await ethers.getContractFactory('Otto')
-    otto = await upgrades.deployProxy(
+    const OTTOV2 = await ethers.getContractFactory('OttoV2')
+    const otto1 = await upgrades.deployProxy(
       OTTO,
       [
         'Otto',
@@ -35,7 +36,14 @@ describe('Otto', function () {
       ],
       { kind: 'uups' }
     )
-    await otto.deployed()
+    await otto1.deployed()
+    otto = await upgrades.upgradeProxy(otto1.address, OTTOV2, {
+      kind: 'uups',
+      call: {
+        fn: 'setIncubationPeriod',
+        args: [14 * 24 * 60 * 60],
+      },
+    })
 
     expect(await otto.name()).to.eq('Otto')
     expect(await otto.symbol()).to.eq('OTTO')
@@ -204,6 +212,24 @@ describe('Otto', function () {
       )
       expect(await otto.U8toU256(arr)).to.eq(n)
       expect(await otto.U256toU8(n)).to.deep.eq(arr)
+    })
+  })
+
+  describe('OttoV2', function () {
+    it('should able to get timestamp', async function () {
+      await network.provider.send('evm_setNextBlockTimestamp', [
+        new Date('2022-01-01T13:00:00Z').getTime() / 1000,
+      ])
+      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+        otto,
+        deployer,
+        1
+      )
+      await network.provider.send('evm_mine')
+      expect(await otto.minted(0)).to.eq(true)
+      expect(await otto.canSummonTimestamp(0)).to.eq(
+        new Date('2022-01-15T13:00:00Z').getTime() / 1000
+      )
     })
   })
 
@@ -385,6 +411,13 @@ describe('Otto', function () {
     })
 
     describe('NOT_STARTED', function () {
+      before(async function () {
+        await network.provider.send('evm_setNextBlockTimestamp', [
+          new Date('2022-03-18T13:00:00Z').getTime() / 1000,
+        ])
+        await network.provider.send('evm_mine')
+      })
+
       it('price in weth', async function () {
         expect(await portalCreator.priceInWETH()).to.eq(parseEther('0.06'))
       })

@@ -235,3 +235,69 @@ contract Otto is
 
     function _authorizeUpgrade(address) internal override onlyAdmin {}
 }
+
+contract OttoV2 is Otto, IOttoV2 {
+    uint256 public incubationPeriod;
+
+    function setIncubationPeriod(uint256 incubationPeriod_)
+        external
+        virtual
+        override
+        onlyAdmin
+    {
+        require(
+            incubationPeriod_ > 0,
+            'incubationPeriod must be greater than 0'
+        );
+        incubationPeriod = incubationPeriod_;
+    }
+
+    function mint(address to_, uint256 quantity_)
+        external
+        virtual
+        override(Otto, IOtto)
+        onlyMinter
+        nonZeroAddress(to_)
+    {
+        uint256 startTokenId = totalSupply();
+        _safeMint(to_, quantity_);
+        for (uint256 i = 0; i < quantity_; i++) {
+            infos[startTokenId + i] = OttoInfo({
+                name: '',
+                description: '',
+                birthday: 0,
+                traits: 0,
+                values: 0,
+                attributes: 0,
+                attributeBonuses: 0,
+                flags: 0,
+                __reserved: [block.timestamp, 0, 0, 0, 0, 0]
+            });
+        }
+    }
+
+    function minted(uint256 tokenId_)
+        external
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return _exists(tokenId_);
+    }
+
+    function canSummonTimestamp(uint256 tokenId_)
+        external
+        view
+        virtual
+        override
+        validOttoId(tokenId_)
+        returns (uint256)
+    {
+        if (infos[tokenId_].__reserved[0] == 0) {
+            return 1647781200 + incubationPeriod; // 2022-03-20T13:00:00.000Z + 14 days
+        } else {
+            return infos[tokenId_].__reserved[0] + incubationPeriod;
+        }
+    }
+}

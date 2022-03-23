@@ -10,3 +10,14 @@ interface IOtto {
 
     function maxBatch() external view returns (uint256);
 }
+
+interface IOttoV2 is IOtto {
+    function minted(uint256 tokenId_) external view returns (bool);
+
+    function canSummonTimestamp(uint256 tokenId_)
+        external
+        view
+        returns (uint256);
+
+    function setIncubationPeriod(uint256 incubationPeriod_) external;
+}
