@@ -1,24 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity 0.7.5;
+pragma solidity 0.8.9;
+
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 import '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol';
 
 import './interfaces/IOtterTreasury.sol';
+import './interfaces/IERC20.sol';
 
-import './types/Ownable.sol';
-import './types/ERC20.sol';
+import './types/OperatorOwnedUpgradeable.sol';
 
-import './libraries/SafeMath.sol';
-
-interface ICLAMERC20 {
-    function burn(uint256 amount) external;
-}
-
-contract OtterBuybacker is Ownable {
-    using SafeMath for uint256;
-
+contract OtterBuybacker is OperatorOwnedUpgradeable, UUPSUpgradeable {
     event Buyback(
         address indexed token,
         uint256 tokenAmount,
@@ -32,17 +26,18 @@ contract OtterBuybacker is Ownable {
         uint256 token1Amount
     );
 
-    IUniswapV2Router02 public immutable router;
-    IOtterTreasury public immutable treasury;
-    address public immutable clam;
-    address public immutable dao;
+    IUniswapV2Router02 public router;
+    IOtterTreasury public treasury;
+    address public clam;
+    address public dao;
 
-    constructor(
+    function initialize(
         address swapRouter_,
         address treasury_,
         address clam_,
         address dao_
-    ) {
+    ) public initializer {
+        __Ownable_init();
         router = IUniswapV2Router02(swapRouter_);
         treasury = IOtterTreasury(treasury_);
         clam = clam_;
@@ -68,7 +63,7 @@ contract OtterBuybacker is Ownable {
         address[] memory path_,
         uint256 amount_,
         uint256 amountOutMin_
-    ) external onlyOwner {
+    ) external onlyOperator {
         IERC20 token = IERC20(path_[0]);
         treasury.manage(path_[0], amount_);
 
@@ -99,7 +94,7 @@ contract OtterBuybacker is Ownable {
         uint256 liquidity_,
         uint256 amountAMin_,
         uint256 amountBMin_
-    ) external onlyOwner {
+    ) external onlyOperator {
         treasury.manage(lp_, liquidity_);
 
         IUniswapV2Pair pair = IUniswapV2Pair(lp_);
@@ -127,8 +122,14 @@ contract OtterBuybacker is Ownable {
         emit RemoveLiquidity(lp_, liquidity_, amountA, amountB);
     }
 
+    function setRouter(address swapRouter_) public onlyOwner {
+        router = IUniswapV2Router02(swapRouter_);
+    }
+
     function emergencyWithdraw(address token_) external onlyOwner {
         uint256 balance = IERC20(token_).balanceOf(address(this));
         IERC20(token_).transfer(dao, balance);
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 }
