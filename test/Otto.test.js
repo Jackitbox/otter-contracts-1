@@ -40,8 +40,8 @@ describe('Otto', function () {
     otto = await upgrades.upgradeProxy(otto1.address, OTTOV2, {
       kind: 'uups',
       call: {
-        fn: 'setIncubationPeriod',
-        args: [14 * 24 * 60 * 60],
+        fn: 'setSummonPeriod',
+        args: [7 * 24 * 60 * 60],
       },
     })
 
@@ -185,7 +185,7 @@ describe('Otto', function () {
       )
     })
 
-    it('should able to encode and decode uint256 correctly', async function () {
+    it('should able to encode and decode u8 u256 correctly', async function () {
       const arr = Array(32).fill(0)
       let n = 0
       expect(await otto.U8toU256(arr)).to.eq(n)
@@ -228,8 +228,38 @@ describe('Otto', function () {
       await network.provider.send('evm_mine')
       expect(await otto.minted(0)).to.eq(true)
       expect(await otto.canSummonTimestamp(0)).to.eq(
-        new Date('2022-01-15T13:00:00Z').getTime() / 1000
+        new Date('2022-01-08T13:00:00Z').getTime() / 1000
       )
+    })
+
+    it('should able to encode and decode u16 u256 correctly', async function () {
+      const arr = Array(16).fill(0)
+      let n = 0
+      expect(await otto.U16toU256(arr)).to.eq(n)
+      expect(await otto.U256toU16(n)).to.deep.eq(arr)
+
+      arr[0] = 1
+      n = 1
+      expect(await otto.U16toU256(arr)).to.eq(n)
+      expect(await otto.U256toU16(n)).to.deep.eq(arr)
+
+      arr[1] = 1
+      n = 65537
+      expect(await otto.U16toU256(arr)).to.eq(n)
+      expect(await otto.U256toU16(n)).to.deep.eq(arr)
+
+      arr[2] = 1
+      n = 4295032833
+      expect(await otto.U16toU256(arr)).to.eq(n)
+      expect(await otto.U256toU16(n)).to.deep.eq(arr)
+
+      arr[15] = 1
+      n = BigNumber.from(
+        '0x0001000000000000000000000000000000000000000000000000000100010001'
+      )
+      // 0x01000000000000000000000000000000000000000000000000000100010001
+      expect(await otto.U16toU256(arr)).to.eq(n)
+      expect(await otto.U256toU16(n)).to.deep.eq(arr)
     })
   })
 

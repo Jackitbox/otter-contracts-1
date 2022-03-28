@@ -68,6 +68,7 @@ module.exports = {
     'otterclam-fork': {
       url: 'https://fork-rpc.otterclam.finance',
       gas: 'auto',
+      accounts: deployer ? [deployer] : [],
     },
     hardhat: {
       chainId,
@@ -79,9 +80,9 @@ module.exports = {
           ? undefined
           : { url: polygonMainnetRPC },
     },
-    localhost: {
-      accounts: deployer ? [deployer] : [],
-    },
+    // localhost: {
+    //   accounts: deployer ? [deployer] : [],
+    // },
   },
   etherscan: {
     apiKey: etherscanApiKey,

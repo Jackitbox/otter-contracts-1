@@ -19,5 +19,15 @@ interface IOttoV2 is IOtto {
         view
         returns (uint256);
 
-    function setIncubationPeriod(uint256 incubationPeriod_) external;
+    function setSummonPeriod(uint256 summonPeriod_) external;
+
+    function U16toU256(uint16[16] memory arr_)
+        external
+        pure
+        returns (uint256 traits_);
+
+    function U256toU16(uint256 traits_)
+        external
+        pure
+        returns (uint16[16] memory arr_);
 }

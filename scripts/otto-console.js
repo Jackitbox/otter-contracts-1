@@ -25,6 +25,8 @@ await (
 
 let ottoAddr = '0x6e8A9Cb6B1E73e9fCe3FD3c68b5af9728F708eB7'
 let portalCreatorAddr = '0xCb8Ba0c08e746CA6fa79fe535580f89A8eC082C2'
+ottoAddr = '0xd3bC207ffA860B389D2EC35075605147c2A98670'
+portalCreatorAddr = '0xA2B66209A3872257F4FC2532bF35138f466f13ea'
 
 let OTTO = await ethers.getContractFactory('Otto')
 let otto = OTTO.attach(ottoAddr)

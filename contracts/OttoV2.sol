@@ -48,18 +48,19 @@ import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol'
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 
-contract Otto is
+contract OttoV2 is
     ERC721AUpgradeable,
     AccessControlUpgradeable,
     OwnableUpgradeable,
     UUPSUpgradeable,
-    IOtto
+    IOttoV2
 {
     bytes32 public constant MINTER_ROLE = keccak256('MINTER_ROLE');
     bytes32 public constant MANAGER_ROLE = keccak256('MANAGER_ROLE');
 
     string private _baseTokenURI;
     mapping(uint256 => OttoInfo) public infos;
+    uint256 public summonPeriod;
 
     struct OttoInfo {
         string name;
@@ -144,7 +145,6 @@ contract Otto is
     function mint(address to_, uint256 quantity_)
         external
         virtual
-        override
         onlyMinter
         nonZeroAddress(to_)
     {
@@ -160,7 +160,7 @@ contract Otto is
                 attributes: 0,
                 attributeBonuses: 0,
                 flags: 0,
-                __reserved: [uint256(0), 0, 0, 0, 0, 0]
+                __reserved: [block.timestamp, 0, 0, 0, 0, 0]
             });
         }
     }
@@ -190,6 +190,16 @@ contract Otto is
         _baseTokenURI = baseURI;
     }
 
+    function setSummonPeriod(uint256 summonPeriod_)
+        external
+        virtual
+        override
+        onlyAdmin
+    {
+        require(summonPeriod_ > 0, 'summonPeriod_ than 0');
+        summonPeriod = summonPeriod_;
+    }
+
     function _baseURI() internal view virtual override returns (string memory) {
         return _baseTokenURI;
     }
@@ -200,6 +210,31 @@ contract Otto is
 
     function maxBatch() external view virtual override returns (uint256) {
         return maxBatchSize;
+    }
+
+    function minted(uint256 tokenId_)
+        external
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return _exists(tokenId_);
+    }
+
+    function canSummonTimestamp(uint256 tokenId_)
+        external
+        view
+        virtual
+        override
+        validOttoId(tokenId_)
+        returns (uint256)
+    {
+        if (infos[tokenId_].__reserved[0] == 0) {
+            return 1648645200 + summonPeriod; // 2022-03-30T13:00:00.000Z + 7 days
+        } else {
+            return infos[tokenId_].__reserved[0] + summonPeriod;
+        }
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -230,6 +265,27 @@ contract Otto is
     {
         for (uint8 i = 0; i < 32; i++) {
             arr_[i] = uint8(traits_ >> (i * 8));
+        }
+    }
+
+    function U16toU256(uint16[16] memory arr_)
+        public
+        pure
+        returns (uint256 traits_)
+    {
+        traits_ = 0;
+        for (uint16 i = 0; i < 16; i++) {
+            traits_ = (traits_ << 16) | arr_[15 - i];
+        }
+    }
+
+    function U256toU16(uint256 traits_)
+        public
+        pure
+        returns (uint16[16] memory arr_)
+    {
+        for (uint16 i = 0; i < 16; i++) {
+            arr_[i] = uint16(traits_ >> (i * 16));
         }
     }
 
