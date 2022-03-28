@@ -12,6 +12,14 @@ interface IOtto {
 }
 
 interface IOttoV2 is IOtto {
+    enum PortalStatus {
+        UNOPENED,
+        OPENED,
+        SUMMONED
+    }
+
+    event BaseURIChanged(address indexed sender_, string baseURI_);
+
     function minted(uint256 tokenId_) external view returns (bool);
 
     function canSummonTimestamp(uint256 tokenId_)
@@ -19,7 +27,40 @@ interface IOttoV2 is IOtto {
         view
         returns (uint256);
 
+    event PortalOpened(
+        address indexed who_,
+        uint256 tokenId_,
+        uint256[] candidates_,
+        bool legendary_
+    );
+
+    function openPortal(
+        uint256 tokenId_,
+        uint256[] memory candidates_,
+        bool legendary_
+    ) external;
+
+    event OttoSummoned(
+        address indexed who_,
+        uint256 tokenId_,
+        uint256 traits_,
+        uint256 birthday_
+    );
+
+    function summon(
+        uint256 tokenId_,
+        uint256 candidateIndex,
+        uint256 birthday_
+    ) external;
+
     function setSummonPeriod(uint256 summonPeriod_) external;
+
+    function portalStatus(uint256 tokenId_)
+        external
+        view
+        returns (PortalStatus);
+
+    function legendary(uint256 tokenId_) external view returns (bool);
 
     function U16toU256(uint16[16] memory arr_)
         external

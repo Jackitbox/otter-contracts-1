@@ -8,9 +8,10 @@ async function main() {
   let upgraded = await upgrades.upgradeProxy(ottoAddr, OTTOV2, {
     kind: 'uups',
     call: {
-      fn: 'setIncubationPeriod',
-      args: [14 * 24 * 60 * 60],
+      fn: 'setSummonPeriod',
+      args: [7 * 24 * 60 * 60],
     },
+    unsafeSkipStorageCheck: true,
   })
   console.log(`otto proxy: ${ottoAddr}, impl: ${upgraded.address}`)
 }

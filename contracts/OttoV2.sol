@@ -60,6 +60,7 @@ contract OttoV2 is
 
     string private _baseTokenURI;
     mapping(uint256 => OttoInfo) public infos;
+    mapping(uint256 => uint256[]) public candidates;
     uint256 public summonPeriod;
 
     struct OttoInfo {
@@ -71,8 +72,8 @@ contract OttoV2 is
         // int16[] [STR, DEF, DEX, INT, LUK, CON, CUTE, BRS, ...reserved]
         uint256 attributes; // can be changed by level up
         uint256 attributeBonuses; // from traits & wearable
-        uint256 flags; // bool [summoned, cantBeTransferred, ...reserved]
-        uint256[6] __reserved;
+        uint256 flags; // bool [portalStatus, isLegendary, ...reserved]
+        uint256 mintTimestamp;
     }
 
     modifier onlyAdmin() {
@@ -160,7 +161,7 @@ contract OttoV2 is
                 attributes: 0,
                 attributeBonuses: 0,
                 flags: 0,
-                __reserved: [block.timestamp, 0, 0, 0, 0, 0]
+                mintTimestamp: block.timestamp
             });
         }
     }
@@ -186,8 +187,72 @@ contract OttoV2 is
         infos[tokenId_].flags = flags_;
     }
 
+    function openPortal(
+        uint256 tokenId_,
+        uint256[] memory candidates_,
+        bool legendary_
+    ) external onlyManager validOttoId(tokenId_) {
+        require(
+            block.timestamp >= infos[tokenId_].mintTimestamp + summonPeriod,
+            'summon period is not over'
+        );
+        require(
+            portalStatus(tokenId_) == PortalStatus.UNOPENED,
+            'portal is already opened'
+        );
+        if (legendary_) {
+            require(
+                candidates_.length == 1,
+                'legendary otto can only have one candidate'
+            );
+        }
+
+        candidates[tokenId_] = candidates_;
+        uint8[32] memory flags_ = U256toU8(infos[tokenId_].flags);
+        flags_[0] = uint8(PortalStatus.OPENED);
+        if (legendary_) {
+            flags_[1] = 1;
+        } else {
+            flags_[1] = 0;
+        }
+        infos[tokenId_].flags = U8toU256(flags_);
+        emit PortalOpened(
+            tx.origin,
+            tokenId_,
+            candidates_,
+            legendary(tokenId_)
+        );
+    }
+
+    function summon(
+        uint256 tokenId_,
+        uint256 candidateIndex,
+        uint256 birthday_
+    ) external onlyManager validOttoId(tokenId_) {
+        require(
+            portalStatus(tokenId_) == PortalStatus.OPENED,
+            'portal is not opened or already summoned'
+        );
+        require(
+            candidateIndex < candidates[tokenId_].length,
+            'invalid candidate index'
+        );
+        uint8[32] memory flags_ = U256toU8(infos[tokenId_].flags);
+        flags_[0] = uint8(PortalStatus.SUMMONED);
+        infos[tokenId_].flags = U8toU256(flags_);
+        infos[tokenId_].traits = candidates[tokenId_][candidateIndex];
+        infos[tokenId_].birthday = birthday_;
+        emit OttoSummoned(
+            tx.origin,
+            tokenId_,
+            candidates[tokenId_][candidateIndex],
+            birthday_
+        );
+    }
+
     function setBaseURI(string calldata baseURI) external onlyAdmin {
         _baseTokenURI = baseURI;
+        emit BaseURIChanged(msg.sender, baseURI);
     }
 
     function setSummonPeriod(uint256 summonPeriod_)
@@ -222,6 +287,28 @@ contract OttoV2 is
         return _exists(tokenId_);
     }
 
+    function portalStatus(uint256 tokenId_)
+        public
+        view
+        virtual
+        override
+        validOttoId(tokenId_)
+        returns (PortalStatus)
+    {
+        return PortalStatus(U256toU8(infos[tokenId_].flags)[0]);
+    }
+
+    function legendary(uint256 tokenId_)
+        public
+        view
+        virtual
+        override
+        validOttoId(tokenId_)
+        returns (bool)
+    {
+        return U256toU8(infos[tokenId_].flags)[1] != 0;
+    }
+
     function canSummonTimestamp(uint256 tokenId_)
         external
         view
@@ -230,10 +317,10 @@ contract OttoV2 is
         validOttoId(tokenId_)
         returns (uint256)
     {
-        if (infos[tokenId_].__reserved[0] == 0) {
+        if (infos[tokenId_].mintTimestamp == 0) {
             return 1648645200 + summonPeriod; // 2022-03-30T13:00:00.000Z + 7 days
         } else {
-            return infos[tokenId_].__reserved[0] + summonPeriod;
+            return infos[tokenId_].mintTimestamp + summonPeriod;
         }
     }
 
