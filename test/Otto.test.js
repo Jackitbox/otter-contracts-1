@@ -135,7 +135,7 @@ describe('Otto', function () {
     })
   })
 
-  describe.only('OttoV2', function () {
+  describe('OttoV2', function () {
     it('setTraits', async function () {
       await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
         otto,
@@ -215,7 +215,7 @@ describe('Otto', function () {
         await expect(otto.summon(0, 0, 0)).to.be.revertedWith(
           'portal is not open'
         )
-        expect(await otto.portalStatus(0)).to.eq(0)
+        expect(await otto.portalStatusOf(0)).to.eq(0)
         await expect(otto.openPortal(0, [1, 2, 3], false))
           .to.emit(otto, 'PortalStatusChanged')
           .withArgs(deployer.address, 0, 1)
@@ -226,14 +226,14 @@ describe('Otto', function () {
         await expect(otto.openPortal(0, [1, 2, 3], false)).to.be.revertedWith(
           'portal is already opened'
         )
-        expect(await otto.portalStatus(0)).to.eq(1)
+        expect(await otto.portalStatusOf(0)).to.eq(1)
         await expect(otto.summon(0, 3, 0)).to.be.revertedWith(
           'invalid candidate index'
         )
         await expect(otto.summon(0, 2, ts))
           .to.emit(otto, 'PortalStatusChanged')
           .withArgs(deployer.address, 0, 2)
-        expect(await otto.portalStatus(0)).to.eq(2)
+        expect(await otto.portalStatusOf(0)).to.eq(2)
         expect(await otto.candidatesOf(0)).to.deep.eq([])
         await expect(otto.summon(0, 2, ts)).to.be.revertedWith(
           'portal is not opened or already summoned'

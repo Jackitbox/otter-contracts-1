@@ -173,7 +173,7 @@ contract OttoV2 is
             'summon period is not over'
         );
         require(
-            portalStatus(tokenId_) == PortalStatus.UNOPENED,
+            portalStatusOf(tokenId_) == PortalStatus.UNOPENED,
             'portal is already opened'
         );
         if (legendary_) {
@@ -194,7 +194,7 @@ contract OttoV2 is
         uint256 birthday_
     ) external onlyManager validOttoId(tokenId_) {
         require(
-            portalStatus(tokenId_) == PortalStatus.OPENED,
+            portalStatusOf(tokenId_) == PortalStatus.OPENED,
             'portal is not opened or already summoned'
         );
         require(
@@ -273,7 +273,7 @@ contract OttoV2 is
         return _exists(tokenId_);
     }
 
-    function portalStatus(uint256 tokenId_)
+    function portalStatusOf(uint256 tokenId_)
         public
         view
         virtual

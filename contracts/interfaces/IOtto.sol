@@ -48,7 +48,7 @@ interface IOttoV2 is IOtto {
 
     function setTraits(uint256 tokenId_, uint256 traits_) external;
 
-    function portalStatus(uint256 tokenId_)
+    function portalStatusOf(uint256 tokenId_)
         external
         view
         returns (PortalStatus);
