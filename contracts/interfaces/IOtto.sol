@@ -62,6 +62,11 @@ interface IOttoV2 is IOtto {
 
     function legendary(uint256 tokenId_) external view returns (bool);
 
+    function candidates(uint256 tokenId_)
+        external
+        view
+        returns (uint256[] memory);
+
     function U16toU256(uint16[16] memory arr_)
         external
         pure

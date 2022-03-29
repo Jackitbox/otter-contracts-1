@@ -60,7 +60,7 @@ contract OttoV2 is
 
     string private _baseTokenURI;
     mapping(uint256 => OttoInfo) public infos;
-    mapping(uint256 => uint256[]) public candidates;
+    mapping(uint256 => uint256[]) private _candidates;
     uint256 public summonPeriod;
 
     struct OttoInfo {
@@ -207,7 +207,7 @@ contract OttoV2 is
             );
         }
 
-        candidates[tokenId_] = candidates_;
+        _candidates[tokenId_] = candidates_;
         uint8[32] memory flags_ = U256toU8(infos[tokenId_].flags);
         flags_[0] = uint8(PortalStatus.OPENED);
         if (legendary_) {
@@ -234,18 +234,18 @@ contract OttoV2 is
             'portal is not opened or already summoned'
         );
         require(
-            candidateIndex < candidates[tokenId_].length,
+            candidateIndex < _candidates[tokenId_].length,
             'invalid candidate index'
         );
         uint8[32] memory flags_ = U256toU8(infos[tokenId_].flags);
         flags_[0] = uint8(PortalStatus.SUMMONED);
         infos[tokenId_].flags = U8toU256(flags_);
-        infos[tokenId_].traits = candidates[tokenId_][candidateIndex];
+        infos[tokenId_].traits = _candidates[tokenId_][candidateIndex];
         infos[tokenId_].birthday = birthday_;
         emit OttoSummoned(
             tx.origin,
             tokenId_,
-            candidates[tokenId_][candidateIndex],
+            _candidates[tokenId_][candidateIndex],
             birthday_
         );
     }
@@ -296,6 +296,17 @@ contract OttoV2 is
         returns (PortalStatus)
     {
         return PortalStatus(U256toU8(infos[tokenId_].flags)[0]);
+    }
+
+    function candidates(uint256 tokenId_)
+        external
+        view
+        virtual
+        override
+        validOttoId(tokenId_)
+        returns (uint256[] memory)
+    {
+        return _candidates[tokenId_];
     }
 
     function legendary(uint256 tokenId_)

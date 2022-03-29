@@ -269,6 +269,9 @@ describe('Otto', function () {
         expect(await otto.openPortal(0, [1, 2, 3], false))
           .to.emit(otto, 'PortalOpened')
           .withArgs(deployer.address, 0, [1, 2, 3], false)
+        expect((await otto.candidates(0)).map((e) => e.toNumber())).to.deep.eq([
+          1, 2, 3,
+        ])
         expect(await otto.legendary(0)).to.eq(false)
         await expect(otto.openPortal(0, [1, 2, 3], false)).to.be.revertedWith(
           'portal is already opened'
