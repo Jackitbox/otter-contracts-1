@@ -158,7 +158,8 @@ describe('Otto', function () {
       const [name, desc, ...got] = await otto.infos(1)
       expect(name).to.eq('name')
       expect(desc).to.eq('desc')
-      // ignore mint timestamp
+      // ignore mintAt & summonAt
+      got.pop()
       got.pop()
       expect(got.map((e) => (e.toNumber ? e.toNumber() : e))).to.deep.eq([
         12345, // birthday
@@ -256,9 +257,9 @@ describe('Otto', function () {
           otto.mint(deployer.address, 2)
         ).to.changeTokenBalance(otto, deployer, 2)
         await network.provider.send('evm_mine')
-        expect(await otto.minted(0)).to.eq(true)
+        expect(await otto.exists(0)).to.eq(true)
         const ts = new Date('2022-01-08T13:00:00Z').getTime() / 1000
-        expect(await otto.canSummonTimestamp(0)).to.eq(ts)
+        expect(await otto.canSummonAt(0)).to.eq(ts)
         await network.provider.send('evm_setNextBlockTimestamp', [ts])
         await network.provider.send('evm_mine')
 
@@ -284,6 +285,7 @@ describe('Otto', function () {
           .to.emit(otto, 'OttoSummoned')
           .withArgs(deployer.address, 0, 3, ts)
         expect(await otto.portalStatus(0)).to.eq(2)
+        expect(await otto.candidates(0)).to.deep.eq([])
         await expect(otto.summon(0, 2, ts)).to.be.revertedWith(
           'portal is not opened or already summoned'
         )

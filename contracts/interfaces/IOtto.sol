@@ -20,12 +20,9 @@ interface IOttoV2 is IOtto {
 
     event BaseURIChanged(address indexed sender_, string baseURI_);
 
-    function minted(uint256 tokenId_) external view returns (bool);
+    function exists(uint256 tokenId_) external view returns (bool);
 
-    function canSummonTimestamp(uint256 tokenId_)
-        external
-        view
-        returns (uint256);
+    function canSummonAt(uint256 tokenId_) external view returns (uint256);
 
     event PortalOpened(
         address indexed who_,

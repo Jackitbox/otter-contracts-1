@@ -73,7 +73,8 @@ contract OttoV2 is
         uint256 attributes; // can be changed by level up
         uint256 attributeBonuses; // from traits & wearable
         uint256 flags; // bool [portalStatus, isLegendary, ...reserved]
-        uint256 mintTimestamp;
+        uint256 mintAt;
+        uint256 summonAt;
     }
 
     modifier onlyAdmin() {
@@ -161,7 +162,8 @@ contract OttoV2 is
                 attributes: 0,
                 attributeBonuses: 0,
                 flags: 0,
-                mintTimestamp: block.timestamp
+                mintAt: block.timestamp,
+                summonAt: 0
             });
         }
     }
@@ -193,7 +195,7 @@ contract OttoV2 is
         bool legendary_
     ) external onlyManager validOttoId(tokenId_) {
         require(
-            block.timestamp >= infos[tokenId_].mintTimestamp + summonPeriod,
+            block.timestamp >= infos[tokenId_].mintAt + summonPeriod,
             'summon period is not over'
         );
         require(
@@ -242,10 +244,12 @@ contract OttoV2 is
         infos[tokenId_].flags = U8toU256(flags_);
         infos[tokenId_].traits = _candidates[tokenId_][candidateIndex];
         infos[tokenId_].birthday = birthday_;
+        infos[tokenId_].summonAt = block.timestamp;
+        delete _candidates[tokenId_];
         emit OttoSummoned(
             tx.origin,
             tokenId_,
-            _candidates[tokenId_][candidateIndex],
+            infos[tokenId_].traits,
             birthday_
         );
     }
@@ -277,7 +281,7 @@ contract OttoV2 is
         return maxBatchSize;
     }
 
-    function minted(uint256 tokenId_)
+    function exists(uint256 tokenId_)
         external
         view
         virtual
@@ -320,7 +324,7 @@ contract OttoV2 is
         return U256toU8(infos[tokenId_].flags)[1] != 0;
     }
 
-    function canSummonTimestamp(uint256 tokenId_)
+    function canSummonAt(uint256 tokenId_)
         external
         view
         virtual
@@ -328,10 +332,10 @@ contract OttoV2 is
         validOttoId(tokenId_)
         returns (uint256)
     {
-        if (infos[tokenId_].mintTimestamp == 0) {
+        if (infos[tokenId_].mintAt == 0) {
             return 1648645200 + summonPeriod; // 2022-03-30T13:00:00.000Z + 7 days
         } else {
-            return infos[tokenId_].mintTimestamp + summonPeriod;
+            return infos[tokenId_].mintAt + summonPeriod;
         }
     }
 
