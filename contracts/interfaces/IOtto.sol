@@ -20,29 +20,23 @@ interface IOttoV2 is IOtto {
 
     event BaseURIChanged(address indexed sender_, string baseURI_);
 
+    event PortalStatusChanged(
+        address indexed sender_,
+        uint256 tokenId_,
+        PortalStatus status_
+    );
+
+    event LegendaryFound(address indexed sender_, uint256 tokenId_);
+
     function exists(uint256 tokenId_) external view returns (bool);
 
     function canSummonAt(uint256 tokenId_) external view returns (uint256);
-
-    event PortalOpened(
-        address indexed who_,
-        uint256 tokenId_,
-        uint256[] candidates_,
-        bool legendary_
-    );
 
     function openPortal(
         uint256 tokenId_,
         uint256[] memory candidates_,
         bool legendary_
     ) external;
-
-    event OttoSummoned(
-        address indexed who_,
-        uint256 tokenId_,
-        uint256 traits_,
-        uint256 birthday_
-    );
 
     function summon(
         uint256 tokenId_,
@@ -52,6 +46,8 @@ interface IOttoV2 is IOtto {
 
     function setSummonPeriod(uint256 summonPeriod_) external;
 
+    function setTraits(uint256 tokenId_, uint256 traits_) external;
+
     function portalStatus(uint256 tokenId_)
         external
         view
@@ -59,18 +55,13 @@ interface IOttoV2 is IOtto {
 
     function legendary(uint256 tokenId_) external view returns (bool);
 
-    function candidates(uint256 tokenId_)
+    function candidatesOf(uint256 tokenId_)
         external
         view
         returns (uint256[] memory);
 
-    function U16toU256(uint16[16] memory arr_)
+    function traitsOf(uint256 tokenId_)
         external
-        pure
-        returns (uint256 traits_);
-
-    function U256toU16(uint256 traits_)
-        external
-        pure
+        view
         returns (uint16[16] memory arr_);
 }

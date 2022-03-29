@@ -60,21 +60,20 @@ contract OttoV2 is
 
     string private _baseTokenURI;
     mapping(uint256 => OttoInfo) public infos;
-    mapping(uint256 => uint256[]) private _candidates;
+    mapping(uint256 => uint256[]) public candidates;
     uint256 public summonPeriod;
 
     struct OttoInfo {
-        string name;
-        string description;
-        uint256 birthday;
-        uint256 traits; // uint8 [...]
-        uint256 values; // uint32 [level, experiences, hungerValue, friendship, ...reserved]
-        // int16[] [STR, DEF, DEX, INT, LUK, CON, CUTE, BRS, ...reserved]
-        uint256 attributes; // can be changed by level up
-        uint256 attributeBonuses; // from traits & wearable
-        uint256 flags; // bool [portalStatus, isLegendary, ...reserved]
         uint256 mintAt;
         uint256 summonAt;
+        uint256 birthday;
+        // u16 [
+        // Background, SkinColor, SkinType, Clothes, Mouth, Eyes, FacialAccessories,
+        // Headwear, Holding, Heraldry, Voice, Personality, Gender, ...
+        // ]
+        uint256 traits;
+        PortalStatus portalStatus;
+        bool legendary;
     }
 
     modifier onlyAdmin() {
@@ -154,39 +153,14 @@ contract OttoV2 is
         _safeMint(to_, quantity_);
         for (uint256 i = 0; i < quantity_; i++) {
             infos[startTokenId + i] = OttoInfo({
-                name: '',
-                description: '',
+                mintAt: block.timestamp,
+                summonAt: 0,
                 birthday: 0,
                 traits: 0,
-                values: 0,
-                attributes: 0,
-                attributeBonuses: 0,
-                flags: 0,
-                mintAt: block.timestamp,
-                summonAt: 0
+                portalStatus: PortalStatus.UNOPENED,
+                legendary: false
             });
         }
-    }
-
-    function set(
-        string memory name_,
-        string memory description_,
-        uint256 tokenId_,
-        uint256 birthday_,
-        uint256 traits_,
-        uint256 values_,
-        uint256 attributes_,
-        uint256 attributeBonuses_,
-        uint256 flags_
-    ) external virtual onlyManager validOttoId(tokenId_) {
-        infos[tokenId_].name = name_;
-        infos[tokenId_].description = description_;
-        infos[tokenId_].birthday = birthday_;
-        infos[tokenId_].traits = traits_;
-        infos[tokenId_].values = values_;
-        infos[tokenId_].attributes = attributes_;
-        infos[tokenId_].attributeBonuses = attributeBonuses_;
-        infos[tokenId_].flags = flags_;
     }
 
     function openPortal(
@@ -209,21 +183,9 @@ contract OttoV2 is
             );
         }
 
-        _candidates[tokenId_] = candidates_;
-        uint8[32] memory flags_ = U256toU8(infos[tokenId_].flags);
-        flags_[0] = uint8(PortalStatus.OPENED);
-        if (legendary_) {
-            flags_[1] = 1;
-        } else {
-            flags_[1] = 0;
-        }
-        infos[tokenId_].flags = U8toU256(flags_);
-        emit PortalOpened(
-            tx.origin,
-            tokenId_,
-            candidates_,
-            legendary(tokenId_)
-        );
+        candidates[tokenId_] = candidates_;
+        _setLegendary(tokenId_, legendary_);
+        _setPortalStatus(tokenId_, PortalStatus.OPENED);
     }
 
     function summon(
@@ -236,22 +198,14 @@ contract OttoV2 is
             'portal is not opened or already summoned'
         );
         require(
-            candidateIndex < _candidates[tokenId_].length,
+            candidateIndex < candidates[tokenId_].length,
             'invalid candidate index'
         );
-        uint8[32] memory flags_ = U256toU8(infos[tokenId_].flags);
-        flags_[0] = uint8(PortalStatus.SUMMONED);
-        infos[tokenId_].flags = U8toU256(flags_);
-        infos[tokenId_].traits = _candidates[tokenId_][candidateIndex];
+        _setPortalStatus(tokenId_, PortalStatus.SUMMONED);
+        infos[tokenId_].traits = candidates[tokenId_][candidateIndex];
         infos[tokenId_].birthday = birthday_;
         infos[tokenId_].summonAt = block.timestamp;
-        delete _candidates[tokenId_];
-        emit OttoSummoned(
-            tx.origin,
-            tokenId_,
-            infos[tokenId_].traits,
-            birthday_
-        );
+        delete candidates[tokenId_];
     }
 
     function setBaseURI(string calldata baseURI) external onlyAdmin {
@@ -267,6 +221,34 @@ contract OttoV2 is
     {
         require(summonPeriod_ > 0, 'summonPeriod_ than 0');
         summonPeriod = summonPeriod_;
+    }
+
+    function setTraits(uint256 tokenId_, uint256 traits_)
+        external
+        virtual
+        override
+        onlyAdmin
+        validOttoId(tokenId_)
+    {
+        infos[tokenId_].traits = traits_;
+    }
+
+    function _setPortalStatus(uint256 tokenId_, PortalStatus status_)
+        private
+        validOttoId(tokenId_)
+    {
+        infos[tokenId_].portalStatus = status_;
+        emit PortalStatusChanged(tx.origin, tokenId_, status_);
+    }
+
+    function _setLegendary(uint256 tokenId_, bool legendary_)
+        private
+        validOttoId(tokenId_)
+    {
+        infos[tokenId_].legendary = legendary_;
+        if (legendary_) {
+            emit LegendaryFound(tx.origin, tokenId_);
+        }
     }
 
     function _baseURI() internal view virtual override returns (string memory) {
@@ -299,18 +281,7 @@ contract OttoV2 is
         validOttoId(tokenId_)
         returns (PortalStatus)
     {
-        return PortalStatus(U256toU8(infos[tokenId_].flags)[0]);
-    }
-
-    function candidates(uint256 tokenId_)
-        external
-        view
-        virtual
-        override
-        validOttoId(tokenId_)
-        returns (uint256[] memory)
-    {
-        return _candidates[tokenId_];
+        return infos[tokenId_].portalStatus;
     }
 
     function legendary(uint256 tokenId_)
@@ -321,7 +292,32 @@ contract OttoV2 is
         validOttoId(tokenId_)
         returns (bool)
     {
-        return U256toU8(infos[tokenId_].flags)[1] != 0;
+        return infos[tokenId_].legendary;
+    }
+
+    function candidatesOf(uint256 tokenId_)
+        external
+        view
+        virtual
+        override
+        validOttoId(tokenId_)
+        returns (uint256[] memory)
+    {
+        return candidates[tokenId_];
+    }
+
+    function traitsOf(uint256 tokenId_)
+        external
+        view
+        virtual
+        override
+        validOttoId(tokenId_)
+        returns (uint16[16] memory arr_)
+    {
+        uint256 traits_ = infos[tokenId_].traits;
+        for (uint16 i = 0; i < 16; i++) {
+            arr_[i] = uint16(traits_ >> (i * 16));
+        }
     }
 
     function canSummonAt(uint256 tokenId_)
@@ -347,48 +343,6 @@ contract OttoV2 is
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
-    }
-
-    function U8toU256(uint8[32] memory arr_)
-        public
-        pure
-        returns (uint256 traits_)
-    {
-        traits_ = 0;
-        for (uint8 i = 0; i < 32; i++) {
-            traits_ = (traits_ << 8) | arr_[31 - i];
-        }
-    }
-
-    function U256toU8(uint256 traits_)
-        public
-        pure
-        returns (uint8[32] memory arr_)
-    {
-        for (uint8 i = 0; i < 32; i++) {
-            arr_[i] = uint8(traits_ >> (i * 8));
-        }
-    }
-
-    function U16toU256(uint16[16] memory arr_)
-        public
-        pure
-        returns (uint256 traits_)
-    {
-        traits_ = 0;
-        for (uint16 i = 0; i < 16; i++) {
-            traits_ = (traits_ << 16) | arr_[15 - i];
-        }
-    }
-
-    function U256toU16(uint256 traits_)
-        public
-        pure
-        returns (uint16[16] memory arr_)
-    {
-        for (uint16 i = 0; i < 16; i++) {
-            arr_[i] = uint16(traits_ >> (i * 16));
-        }
     }
 
     function _authorizeUpgrade(address) internal override onlyAdmin {}
