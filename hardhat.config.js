@@ -5,6 +5,12 @@ require('@openzeppelin/hardhat-upgrades')
 
 require('dotenv').config()
 
+const fs = require('fs')
+const files = fs.readdirSync('./tasks')
+for (const file of files) {
+  require('./tasks/' + file)
+}
+
 const { ethers } = require('ethers')
 const dev = process.env.DEV_PRIVATE_KEY
 const deployer = process.env.DEPLOYER_PRIVATE_KEY
