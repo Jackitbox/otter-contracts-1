@@ -186,6 +186,7 @@ contract OttoV2 is
         candidates[tokenId_] = candidates_;
         _setLegendary(tokenId_, legendary_);
         _setPortalStatus(tokenId_, PortalStatus.OPENED);
+        emit OpenPortal(tx.origin, tokenId_, legendary_);
     }
 
     function summon(
@@ -206,6 +207,7 @@ contract OttoV2 is
         infos[tokenId_].birthday = birthday_;
         infos[tokenId_].summonAt = block.timestamp;
         delete candidates[tokenId_];
+        emit SummonOtto(tx.origin, tokenId_, infos[tokenId_].legendary);
     }
 
     function setBaseURI(string calldata baseURI) external onlyAdmin {
@@ -238,7 +240,6 @@ contract OttoV2 is
         validOttoId(tokenId_)
     {
         infos[tokenId_].portalStatus = status_;
-        emit PortalStatusChanged(tx.origin, tokenId_, status_);
     }
 
     function _setLegendary(uint256 tokenId_, bool legendary_)
@@ -246,9 +247,6 @@ contract OttoV2 is
         validOttoId(tokenId_)
     {
         infos[tokenId_].legendary = legendary_;
-        if (legendary_) {
-            emit LegendaryFound(tx.origin, tokenId_);
-        }
     }
 
     function _baseURI() internal view virtual override returns (string memory) {

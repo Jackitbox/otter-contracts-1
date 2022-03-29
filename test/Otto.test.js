@@ -217,8 +217,8 @@ describe('Otto', function () {
         )
         expect(await otto.portalStatusOf(0)).to.eq(0)
         await expect(otto.openPortal(0, [1, 2, 3], false))
-          .to.emit(otto, 'PortalStatusChanged')
-          .withArgs(deployer.address, 0, 1)
+          .to.emit(otto, 'OpenPortal')
+          .withArgs(deployer.address, 0, false)
         expect(
           (await otto.candidatesOf(0)).map((e) => e.toNumber())
         ).to.deep.eq([1, 2, 3])
@@ -231,8 +231,8 @@ describe('Otto', function () {
           'invalid candidate index'
         )
         await expect(otto.summon(0, 2, ts))
-          .to.emit(otto, 'PortalStatusChanged')
-          .withArgs(deployer.address, 0, 2)
+          .to.emit(otto, 'SummonOtto')
+          .withArgs(deployer.address, 0, false)
         expect(await otto.portalStatusOf(0)).to.eq(2)
         expect(await otto.candidatesOf(0)).to.deep.eq([])
         await expect(otto.summon(0, 2, ts)).to.be.revertedWith(
@@ -243,8 +243,12 @@ describe('Otto', function () {
           'legendary otto can only have one candidate'
         )
         await expect(otto.openPortal(1, [3], true))
-          .to.emit(otto, 'LegendaryFound')
-          .withArgs(deployer.address, 1)
+          .to.emit(otto, 'OpenPortal')
+          .withArgs(deployer.address, 1, true)
+        expect(await otto.legendary(1)).to.eq(true)
+        await expect(otto.summon(1, 0, ts))
+          .to.emit(otto, 'SummonOtto')
+          .withArgs(deployer.address, 1, true)
         expect(await otto.legendary(1)).to.eq(true)
       })
     })

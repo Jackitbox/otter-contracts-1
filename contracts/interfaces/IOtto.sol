@@ -20,13 +20,17 @@ interface IOttoV2 is IOtto {
 
     event BaseURIChanged(address indexed sender_, string baseURI_);
 
-    event PortalStatusChanged(
+    event OpenPortal(
         address indexed sender_,
         uint256 tokenId_,
-        PortalStatus status_
+        bool legendary_
     );
 
-    event LegendaryFound(address indexed sender_, uint256 tokenId_);
+    event SummonOtto(
+        address indexed sender_,
+        uint256 tokenId_,
+        bool legendary_
+    );
 
     function exists(uint256 tokenId_) external view returns (bool);
 
