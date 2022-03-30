@@ -165,7 +165,7 @@ contract OttoV2 is
 
     function setTraits(uint256 tokenId_, uint256 traits_)
         external
-        onlyAdmin
+        onlyManager
         validOttoId(tokenId_)
     {
         infos[tokenId_].traits = traits_;
