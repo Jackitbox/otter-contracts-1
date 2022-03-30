@@ -8,7 +8,7 @@ async function main() {
   let upgraded = await upgrades.upgradeProxy(ottoAddr, OTTOV2, {
     kind: 'uups',
     call: {
-      fn: 'setSummonPeriod',
+      fn: 'setOpenPeriod',
       args: [7 * 24 * 60 * 60],
     },
     unsafeSkipStorageCheck: true,

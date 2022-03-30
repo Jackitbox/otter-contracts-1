@@ -61,7 +61,7 @@ contract OttoV2 is
     string private _baseTokenURI;
     mapping(uint256 => OttoInfo) public infos;
     mapping(uint256 => uint256[]) public candidates;
-    uint256 public summonPeriod;
+    uint256 public openPeriod;
 
     struct OttoInfo {
         uint256 mintAt;
@@ -169,8 +169,8 @@ contract OttoV2 is
         bool legendary_
     ) external onlyManager validOttoId(tokenId_) {
         require(
-            block.timestamp >= infos[tokenId_].mintAt + summonPeriod,
-            'summon period is not over'
+            block.timestamp >= canOpenAt(tokenId_),
+            'open period is not over'
         );
         require(
             portalStatusOf(tokenId_) == PortalStatus.UNOPENED,
@@ -184,8 +184,8 @@ contract OttoV2 is
         }
 
         candidates[tokenId_] = candidates_;
-        _setLegendary(tokenId_, legendary_);
-        _setPortalStatus(tokenId_, PortalStatus.OPENED);
+        infos[tokenId_].legendary = legendary_;
+        infos[tokenId_].portalStatus = PortalStatus.OPENED;
         emit OpenPortal(tx.origin, tokenId_, legendary_);
     }
 
@@ -202,7 +202,7 @@ contract OttoV2 is
             candidateIndex < candidates[tokenId_].length,
             'invalid candidate index'
         );
-        _setPortalStatus(tokenId_, PortalStatus.SUMMONED);
+        infos[tokenId_].portalStatus = PortalStatus.SUMMONED;
         infos[tokenId_].traits = candidates[tokenId_][candidateIndex];
         infos[tokenId_].birthday = birthday_;
         infos[tokenId_].summonAt = block.timestamp;
@@ -215,14 +215,13 @@ contract OttoV2 is
         emit BaseURIChanged(msg.sender, baseURI);
     }
 
-    function setSummonPeriod(uint256 summonPeriod_)
+    function setOpenPeriod(uint256 openPeriod_)
         external
         virtual
         override
         onlyAdmin
     {
-        require(summonPeriod_ > 0, 'summonPeriod_ than 0');
-        summonPeriod = summonPeriod_;
+        openPeriod = openPeriod_;
     }
 
     function setTraits(uint256 tokenId_, uint256 traits_)
@@ -233,20 +232,6 @@ contract OttoV2 is
         validOttoId(tokenId_)
     {
         infos[tokenId_].traits = traits_;
-    }
-
-    function _setPortalStatus(uint256 tokenId_, PortalStatus status_)
-        private
-        validOttoId(tokenId_)
-    {
-        infos[tokenId_].portalStatus = status_;
-    }
-
-    function _setLegendary(uint256 tokenId_, bool legendary_)
-        private
-        validOttoId(tokenId_)
-    {
-        infos[tokenId_].legendary = legendary_;
     }
 
     function _baseURI() internal view virtual override returns (string memory) {
@@ -318,8 +303,8 @@ contract OttoV2 is
         }
     }
 
-    function canSummonAt(uint256 tokenId_)
-        external
+    function canOpenAt(uint256 tokenId_)
+        public
         view
         virtual
         override
@@ -327,9 +312,9 @@ contract OttoV2 is
         returns (uint256)
     {
         if (infos[tokenId_].mintAt == 0) {
-            return 1648645200 + summonPeriod; // 2022-03-30T13:00:00.000Z + 7 days
+            return 1648645200 + openPeriod; // 2022-03-30T13:00:00.000Z + 7 days
         } else {
-            return infos[tokenId_].mintAt + summonPeriod;
+            return infos[tokenId_].mintAt + openPeriod;
         }
     }
 

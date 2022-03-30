@@ -40,7 +40,7 @@ describe('Otto', function () {
     otto = await upgrades.upgradeProxy(otto1.address, OTTOV2, {
       kind: 'uups',
       call: {
-        fn: 'setSummonPeriod',
+        fn: 'setOpenPeriod',
         args: [7 * 24 * 60 * 60],
       },
       unsafeSkipStorageCheck: true,
@@ -192,7 +192,7 @@ describe('Otto', function () {
           otto.mint(deployer.address, 1)
         ).to.changeTokenBalance(otto, deployer, 1)
         await expect(otto.openPortal(0, [1, 2, 3], false)).to.be.revertedWith(
-          'summon period is not over'
+          'open period is not over'
         )
       })
     })
@@ -208,7 +208,7 @@ describe('Otto', function () {
         await network.provider.send('evm_mine')
         expect(await otto.exists(0)).to.eq(true)
         const ts = new Date('2022-01-08T13:00:00Z').getTime() / 1000
-        expect(await otto.canSummonAt(0)).to.eq(ts)
+        expect(await otto.canOpenAt(0)).to.eq(ts)
         await network.provider.send('evm_setNextBlockTimestamp', [ts])
         await network.provider.send('evm_mine')
 

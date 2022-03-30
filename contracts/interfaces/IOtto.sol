@@ -34,7 +34,7 @@ interface IOttoV2 is IOtto {
 
     function exists(uint256 tokenId_) external view returns (bool);
 
-    function canSummonAt(uint256 tokenId_) external view returns (uint256);
+    function canOpenAt(uint256 tokenId_) external view returns (uint256);
 
     function openPortal(
         uint256 tokenId_,
@@ -48,7 +48,7 @@ interface IOttoV2 is IOtto {
         uint256 birthday_
     ) external;
 
-    function setSummonPeriod(uint256 summonPeriod_) external;
+    function setOpenPeriod(uint256 openPeriod_) external;
 
     function setTraits(uint256 tokenId_, uint256 traits_) external;
 
