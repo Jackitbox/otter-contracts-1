@@ -25,7 +25,8 @@ describe('Otto', function () {
     ;[deployer, dao, badguy, treasury] = await ethers.getSigners()
 
     const OTTO = await ethers.getContractFactory('Otto')
-    otto = await upgrades.deployProxy(
+    const OTTOV2 = await ethers.getContractFactory('OttoV2')
+    const otto1 = await upgrades.deployProxy(
       OTTO,
       [
         'Otto',
@@ -35,11 +36,21 @@ describe('Otto', function () {
       ],
       { kind: 'uups' }
     )
-    await otto.deployed()
+    await otto1.deployed()
+    otto = await upgrades.upgradeProxy(otto1.address, OTTOV2, {
+      kind: 'uups',
+      call: {
+        fn: 'setOpenPeriod',
+        args: [7 * 24 * 60 * 60],
+      },
+      unsafeSkipStorageCheck: true,
+    })
 
     expect(await otto.name()).to.eq('Otto')
     expect(await otto.symbol()).to.eq('OTTO')
-    await otto.setBaseURI(baseURI)
+    await expect(otto.setBaseURI(baseURI))
+      .to.emit(otto, 'BaseURIChanged')
+      .withArgs(deployer.address, baseURI)
   })
 
   describe('OttoContract', function () {
@@ -93,68 +104,13 @@ describe('Otto', function () {
       expect(await otto.balanceOf(deployer.address)).to.eq(1)
       expect(await otto.tokenURI(0)).to.eq(`${baseURI}0`)
 
-      const [name, desc, birthday, traits, values, attrs, bonuses, flags] =
+      const [, , , birthday, traits, portalStatus, legendary] =
         await otto.infos(0)
 
-      expect(name).to.eq('')
-      expect(desc).to.eq('')
       expect(birthday).to.eq(0)
       expect(traits).to.eq(0)
-      expect(values).to.eq(0)
-      expect(attrs).to.deep.eq(0)
-      expect(bonuses).to.deep.eq(0)
-      expect(flags).to.eq(0)
-    })
-
-    it('should fail to set if caller is not manager', async function () {
-      await expect(() => otto.mint(deployer.address, 3)).to.changeTokenBalance(
-        otto,
-        deployer,
-        3
-      )
-      await expect(
-        otto.connect(badguy).set(
-          'name',
-          'desc',
-          1, // tokenId
-          12345, // birthday
-          1, // traits
-          2, // values
-          6, // attrs
-          7, // bonuses
-          8 // flags
-        )
-      ).to.be.reverted
-    })
-
-    it('should able to set by manager', async function () {
-      await expect(() => otto.mint(deployer.address, 3)).to.changeTokenBalance(
-        otto,
-        deployer,
-        3
-      )
-      await otto.set(
-        'name',
-        'desc',
-        1, // tokenId
-        12345, // birthday
-        1, // traits
-        2, // values
-        6, // attrs
-        7, // bonuses
-        8 // flags
-      )
-      const [name, desc, ...got] = await otto.infos(1)
-      expect(name).to.eq('name')
-      expect(desc).to.eq('desc')
-      expect(got.map((e) => (e.toNumber ? e.toNumber() : e))).to.deep.eq([
-        12345, // birthday
-        1, // traits
-        2, // values
-        6, // attrs
-        7, // bonuses
-        8, // flags
-      ])
+      expect(portalStatus).to.eq(0)
+      expect(legendary).to.eq(false)
     })
 
     it('should able to mint 6 ottos at a time', async function () {
@@ -176,34 +132,145 @@ describe('Otto', function () {
         'ERC721AUpgradeable: quantity to mint too high'
       )
     })
+  })
 
-    it('should able to encode and decode uint256 correctly', async function () {
-      const arr = Array(32).fill(0)
+  describe('OttoV2', function () {
+    it('setTraits', async function () {
+      await expect(() => otto.mint(deployer.address, 1)).to.changeTokenBalance(
+        otto,
+        deployer,
+        1
+      )
+      const arr = Array(16).fill(0)
       let n = 0
-      expect(await otto.U8toU256(arr)).to.eq(n)
-      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+      await otto.setTraits(0, n)
+      expect(await otto.traitsOf(0)).to.deep.eq(arr)
 
       arr[0] = 1
       n = 1
-      expect(await otto.U8toU256(arr)).to.eq(n)
-      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+      await otto.setTraits(0, n)
+      expect(await otto.traitsOf(0)).to.deep.eq(arr)
 
       arr[1] = 1
-      n = 257
-      expect(await otto.U8toU256(arr)).to.eq(n)
-      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+      n = 65537
+      await otto.setTraits(0, n)
+      expect(await otto.traitsOf(0)).to.deep.eq(arr)
 
       arr[2] = 1
-      n = 65793
-      expect(await otto.U8toU256(arr)).to.eq(n)
-      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+      n = 4295032833
+      await otto.setTraits(0, n)
+      expect(await otto.traitsOf(0)).to.deep.eq(arr)
 
-      arr[31] = 1
+      arr[15] = 1
       n = BigNumber.from(
-        '0x0100000000000000000000000000000000000000000000000000000000010101'
+        '0x0001000000000000000000000000000000000000000000000000000100010001'
       )
-      expect(await otto.U8toU256(arr)).to.eq(n)
-      expect(await otto.U256toU8(n)).to.deep.eq(arr)
+      // 0x01000000000000000000000000000000000000000000000000000100010001
+      await otto.setTraits(0, n)
+      expect(await otto.traitsOf(0)).to.deep.eq(arr)
+    })
+
+    describe('summon period is not over', function () {
+      it('should fail to setCanOpenAt if caller is not admin', async function () {
+        await expect(otto.connect(badguy).setCanOpenAt(123, [1, 2])).to.be
+          .reverted
+      })
+
+      it('should able to setCanOpenAt', async function () {
+        await expect(() =>
+          otto.mint(deployer.address, 3)
+        ).to.changeTokenBalance(otto, deployer, 3)
+        await otto.setCanOpenAt(123, [1, 2])
+        const infos = await Promise.all([
+          otto.infos(0),
+          otto.infos(1),
+          otto.infos(2),
+        ])
+        expect(infos[0][1].toNumber()).to.not.eq(123)
+        expect(infos[1][1].toNumber()).to.eq(123)
+        expect(infos[2][1].toNumber()).to.eq(123)
+      })
+
+      it('should fail to openPortal if caller is not manager', async function () {
+        await expect(otto.connect(badguy).openPortal(0, [1, 2, 3], false)).to.be
+          .reverted
+      })
+
+      it('should fail to summon if caller is not manager', async function () {
+        await expect(otto.connect(badguy).summon(0, 0, 0)).to.be.reverted
+      })
+
+      it('should fail to openPortal with invalid tokenId', async function () {
+        await expect(otto.openPortal(0, [1, 2, 3], false)).to.be.revertedWith(
+          'invalid tokenId'
+        )
+      })
+
+      it('should fail to openPortal if summonPeriod is not over', async function () {
+        await expect(() =>
+          otto.mint(deployer.address, 1)
+        ).to.changeTokenBalance(otto, deployer, 1)
+        await expect(otto.openPortal(0, [1, 2, 3], false)).to.be.revertedWith(
+          'open period is not over'
+        )
+      })
+    })
+
+    describe('summon period is over', function () {
+      it('should able to summon', async function () {
+        await network.provider.send('evm_setNextBlockTimestamp', [
+          new Date('2022-01-01T13:00:00Z').getTime() / 1000,
+        ])
+        await expect(() =>
+          otto.mint(deployer.address, 2)
+        ).to.changeTokenBalance(otto, deployer, 2)
+        await network.provider.send('evm_mine')
+        expect(await otto.exists(0)).to.eq(true)
+        const ts = new Date('2022-01-08T13:00:00Z').getTime() / 1000
+        const [, canOpenAt] = await otto.infos(0)
+        expect(canOpenAt).to.eq(ts)
+        await network.provider.send('evm_setNextBlockTimestamp', [ts])
+        await network.provider.send('evm_mine')
+
+        await expect(otto.summon(0, 0, 0)).to.be.revertedWith(
+          'portal is not open'
+        )
+        expect(await otto.portalStatusOf(0)).to.eq(0)
+        await expect(otto.openPortal(0, [1, 2, 3], false))
+          .to.emit(otto, 'OpenPortal')
+          .withArgs(deployer.address, 0, false)
+        expect(
+          (await otto.candidatesOf(0)).map((e) => e.toNumber())
+        ).to.deep.eq([1, 2, 3])
+        expect(await otto.legendary(0)).to.eq(false)
+        await expect(otto.openPortal(0, [1, 2, 3], false)).to.be.revertedWith(
+          'portal is already opened'
+        )
+        expect(await otto.portalStatusOf(0)).to.eq(1)
+        await expect(otto.summon(0, 3, 0)).to.be.revertedWith(
+          'invalid candidate index'
+        )
+        await expect(otto.summon(0, 2, ts))
+          .to.emit(otto, 'SummonOtto')
+          .withArgs(deployer.address, 0, false)
+        expect(await otto.portalStatusOf(0)).to.eq(2)
+        expect(await otto.candidatesOf(0)).to.deep.eq([])
+        await expect(otto.summon(0, 2, ts)).to.be.revertedWith(
+          'portal is not opened or already summoned'
+        )
+
+        await expect(otto.openPortal(1, [1, 3], true)).to.be.revertedWith(
+          'legendary otto can only have one candidate'
+        )
+        await expect(otto.openPortal(1, [3], true))
+          .to.emit(otto, 'OpenPortal')
+          .withArgs(deployer.address, 1, true)
+        expect(await otto.legendary(1)).to.eq(true)
+        await expect(otto.summon(1, 0, ts))
+          .to.emit(otto, 'SummonOtto')
+          .withArgs(deployer.address, 1, true)
+        expect(await otto.legendary(1)).to.eq(true)
+      })
     })
   })
 
@@ -385,6 +452,13 @@ describe('Otto', function () {
     })
 
     describe('NOT_STARTED', function () {
+      before(async function () {
+        await network.provider.send('evm_setNextBlockTimestamp', [
+          new Date('2022-03-18T13:00:00Z').getTime() / 1000,
+        ])
+        await network.provider.send('evm_mine')
+      })
+
       it('price in weth', async function () {
         expect(await portalCreator.priceInWETH()).to.eq(parseEther('0.06'))
       })

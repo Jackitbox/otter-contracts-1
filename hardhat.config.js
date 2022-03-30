@@ -64,6 +64,7 @@ module.exports = {
       url: polygonMainnetRPC,
       accounts: deployer ? [deployer] : deployer,
       gasPrice: ethers.utils.parseUnits('70', 'gwei').toNumber(),
+      timeout: 120000,
     },
     'polygon-mumbai': {
       url: polygonMumbaiRPC,
@@ -74,14 +75,21 @@ module.exports = {
     'otterclam-fork': {
       url: 'https://fork-rpc.otterclam.finance',
       gas: 'auto',
+      accounts: deployer ? [deployer] : [],
     },
     hardhat: {
       chainId,
       gas: 'auto',
+      initialDate:
+        process.env.NODE_ENV === 'test' ? '2021-11-02T00:00:00Z' : undefined,
       forking:
         process.env.NODE_ENV === 'test'
           ? undefined
           : { url: polygonMainnetRPC },
+    },
+    localhost: {
+      accounts: deployer ? [deployer] : [],
+      timeout: 120000,
     },
   },
   etherscan: {

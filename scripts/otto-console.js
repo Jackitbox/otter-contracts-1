@@ -30,7 +30,7 @@ await (
 let ottoAddr = '0x6e8A9Cb6B1E73e9fCe3FD3c68b5af9728F708eB7'
 let portalCreatorAddr = '0xCb8Ba0c08e746CA6fa79fe535580f89A8eC082C2'
 
-let otto = (await ethers.getContractAt('Otto', ottoAddr)).connect(dev)
+let otto = (await ethers.getContractAt('OttoV2', ottoAddr)).connect(dev)
 let portalCreator = (
   await ethers.getContractAt('OttopiaPortalCreator', portalCreatorAddr)
 ).connect(dev)
@@ -47,3 +47,11 @@ await (
   await otto.setBaseURI('https://api.otterclam.finance/ottos/metadata/')
 ).wait()
 await (await portalCreator.devMint(deployer.address, 1)).wait()
+await (
+  await portalCreator.mint(
+    deployer.address,
+    1,
+    await portalCreator.priceInCLAM(),
+    true
+  )
+).wait()

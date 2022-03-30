@@ -10,3 +10,56 @@ interface IOtto {
 
     function maxBatch() external view returns (uint256);
 }
+
+interface IOttoV2 is IOtto {
+    enum PortalStatus {
+        UNOPENED,
+        OPENED,
+        SUMMONED
+    }
+
+    event BaseURIChanged(address indexed sender_, string baseURI_);
+
+    event OpenPortal(
+        address indexed sender_,
+        uint256 tokenId_,
+        bool legendary_
+    );
+
+    event SummonOtto(
+        address indexed sender_,
+        uint256 tokenId_,
+        bool legendary_
+    );
+
+    function exists(uint256 tokenId_) external view returns (bool);
+
+    function openPortal(
+        uint256 tokenId_,
+        uint256[] memory candidates_,
+        bool legendary_
+    ) external;
+
+    function summon(
+        uint256 tokenId_,
+        uint256 candidateIndex,
+        uint256 birthday_
+    ) external;
+
+    function portalStatusOf(uint256 tokenId_)
+        external
+        view
+        returns (PortalStatus);
+
+    function legendary(uint256 tokenId_) external view returns (bool);
+
+    function candidatesOf(uint256 tokenId_)
+        external
+        view
+        returns (uint256[] memory);
+
+    function traitsOf(uint256 tokenId_)
+        external
+        view
+        returns (uint16[16] memory arr_);
+}
