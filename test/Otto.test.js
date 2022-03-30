@@ -104,9 +104,8 @@ describe('Otto', function () {
       expect(await otto.balanceOf(deployer.address)).to.eq(1)
       expect(await otto.tokenURI(0)).to.eq(`${baseURI}0`)
 
-      const [, , birthday, traits, portalStatus, legendary] = await otto.infos(
-        0
-      )
+      const [, , , birthday, traits, portalStatus, legendary] =
+        await otto.infos(0)
 
       expect(birthday).to.eq(0)
       expect(traits).to.eq(0)
@@ -172,6 +171,26 @@ describe('Otto', function () {
     })
 
     describe('summon period is not over', function () {
+      it('should fail to setCanOpenAt if caller is not admin', async function () {
+        await expect(otto.connect(badguy).setCanOpenAt(123, [1, 2])).to.be
+          .reverted
+      })
+
+      it('should able to setCanOpenAt', async function () {
+        await expect(() =>
+          otto.mint(deployer.address, 3)
+        ).to.changeTokenBalance(otto, deployer, 3)
+        await otto.setCanOpenAt(123, [1, 2])
+        const infos = await Promise.all([
+          otto.infos(0),
+          otto.infos(1),
+          otto.infos(2),
+        ])
+        expect(infos[0][1].toNumber()).to.not.eq(123)
+        expect(infos[1][1].toNumber()).to.eq(123)
+        expect(infos[2][1].toNumber()).to.eq(123)
+      })
+
       it('should fail to openPortal if caller is not manager', async function () {
         await expect(otto.connect(badguy).openPortal(0, [1, 2, 3], false)).to.be
           .reverted
@@ -208,7 +227,8 @@ describe('Otto', function () {
         await network.provider.send('evm_mine')
         expect(await otto.exists(0)).to.eq(true)
         const ts = new Date('2022-01-08T13:00:00Z').getTime() / 1000
-        expect(await otto.canOpenAt(0)).to.eq(ts)
+        const [, canOpenAt] = await otto.infos(0)
+        expect(canOpenAt).to.eq(ts)
         await network.provider.send('evm_setNextBlockTimestamp', [ts])
         await network.provider.send('evm_mine')
 

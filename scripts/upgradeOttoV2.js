@@ -5,7 +5,7 @@ async function main() {
   let OTTO = await ethers.getContractFactory('Otto')
   let OTTOV2 = await ethers.getContractFactory('OttoV2')
   await upgrades.forceImport(ottoAddr, OTTO)
-  let upgraded = await upgrades.upgradeProxy(ottoAddr, OTTOV2, {
+  let otto = await upgrades.upgradeProxy(ottoAddr, OTTOV2, {
     kind: 'uups',
     call: {
       fn: 'setOpenPeriod',
@@ -13,7 +13,22 @@ async function main() {
     },
     unsafeSkipStorageCheck: true,
   })
-  console.log(`otto proxy: ${ottoAddr}, impl: ${upgraded.address}`)
+  const total = await otto.totalSupply()
+  const chunk = 200
+  const times = Math.floor(total / chunk)
+  const ts = new Date('2022-04-06T13:00:00Z').getTime() / 1000
+
+  for (let i = 0; i <= times; i++) {
+    const n = i == times ? total % chunk : chunk
+    if (n > 0) {
+      const ids = Array(n)
+        .fill(0)
+        .map((_, index) => index + i * chunk)
+      console.log(`${i}/${times}: setCanOpenAt(${ts}, ${ids})`)
+      await otto.setCanOpenAt(ts, ids)
+    }
+  }
+  console.log(`address: ${otto.address}`)
 }
 
 main()

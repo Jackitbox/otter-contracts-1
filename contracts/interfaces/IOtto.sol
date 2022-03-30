@@ -34,8 +34,6 @@ interface IOttoV2 is IOtto {
 
     function exists(uint256 tokenId_) external view returns (bool);
 
-    function canOpenAt(uint256 tokenId_) external view returns (uint256);
-
     function openPortal(
         uint256 tokenId_,
         uint256[] memory candidates_,
@@ -47,10 +45,6 @@ interface IOttoV2 is IOtto {
         uint256 candidateIndex,
         uint256 birthday_
     ) external;
-
-    function setOpenPeriod(uint256 openPeriod_) external;
-
-    function setTraits(uint256 tokenId_, uint256 traits_) external;
 
     function portalStatusOf(uint256 tokenId_)
         external

@@ -65,6 +65,7 @@ contract OttoV2 is
 
     struct OttoInfo {
         uint256 mintAt;
+        uint256 canOpenAt;
         uint256 summonAt;
         uint256 birthday;
         // u16 [
@@ -143,6 +144,33 @@ contract OttoV2 is
         _revokeRole(MANAGER_ROLE, manager_);
     }
 
+    function setBaseURI(string calldata baseURI) external onlyAdmin {
+        _baseTokenURI = baseURI;
+        emit BaseURIChanged(msg.sender, baseURI);
+    }
+
+    function setOpenPeriod(uint256 openPeriod_) external onlyAdmin {
+        openPeriod = openPeriod_;
+    }
+
+    function setCanOpenAt(uint256 ts_, uint256[] memory tokendIds_)
+        external
+        onlyAdmin
+    {
+        for (uint256 i = 0; i < tokendIds_.length; i++) {
+            require(_exists(tokendIds_[i]), 'invalid tokenId');
+            infos[tokendIds_[i]].canOpenAt = ts_;
+        }
+    }
+
+    function setTraits(uint256 tokenId_, uint256 traits_)
+        external
+        onlyAdmin
+        validOttoId(tokenId_)
+    {
+        infos[tokenId_].traits = traits_;
+    }
+
     function mint(address to_, uint256 quantity_)
         external
         virtual
@@ -154,6 +182,7 @@ contract OttoV2 is
         for (uint256 i = 0; i < quantity_; i++) {
             infos[startTokenId + i] = OttoInfo({
                 mintAt: block.timestamp,
+                canOpenAt: block.timestamp + openPeriod,
                 summonAt: 0,
                 birthday: 0,
                 traits: 0,
@@ -169,7 +198,8 @@ contract OttoV2 is
         bool legendary_
     ) external onlyManager validOttoId(tokenId_) {
         require(
-            block.timestamp >= canOpenAt(tokenId_),
+            infos[tokenId_].canOpenAt != 0 &&
+                block.timestamp >= infos[tokenId_].canOpenAt,
             'open period is not over'
         );
         require(
@@ -208,30 +238,6 @@ contract OttoV2 is
         infos[tokenId_].summonAt = block.timestamp;
         delete candidates[tokenId_];
         emit SummonOtto(tx.origin, tokenId_, infos[tokenId_].legendary);
-    }
-
-    function setBaseURI(string calldata baseURI) external onlyAdmin {
-        _baseTokenURI = baseURI;
-        emit BaseURIChanged(msg.sender, baseURI);
-    }
-
-    function setOpenPeriod(uint256 openPeriod_)
-        external
-        virtual
-        override
-        onlyAdmin
-    {
-        openPeriod = openPeriod_;
-    }
-
-    function setTraits(uint256 tokenId_, uint256 traits_)
-        external
-        virtual
-        override
-        onlyAdmin
-        validOttoId(tokenId_)
-    {
-        infos[tokenId_].traits = traits_;
     }
 
     function _baseURI() internal view virtual override returns (string memory) {
@@ -300,21 +306,6 @@ contract OttoV2 is
         uint256 traits_ = infos[tokenId_].traits;
         for (uint16 i = 0; i < 16; i++) {
             arr_[i] = uint16(traits_ >> (i * 16));
-        }
-    }
-
-    function canOpenAt(uint256 tokenId_)
-        public
-        view
-        virtual
-        override
-        validOttoId(tokenId_)
-        returns (uint256)
-    {
-        if (infos[tokenId_].mintAt == 0) {
-            return 1648645200 + openPeriod; // 2022-03-30T13:00:00.000Z + 7 days
-        } else {
-            return infos[tokenId_].mintAt + openPeriod;
         }
     }
 

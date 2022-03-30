@@ -64,6 +64,7 @@ module.exports = {
       url: polygonMainnetRPC,
       accounts: deployer ? [deployer] : deployer,
       gasPrice: ethers.utils.parseUnits('70', 'gwei').toNumber(),
+      timeout: 120000,
     },
     'polygon-mumbai': {
       url: polygonMumbaiRPC,
@@ -88,6 +89,7 @@ module.exports = {
     },
     localhost: {
       accounts: deployer ? [deployer] : [],
+      timeout: 120000,
     },
   },
   etherscan: {
