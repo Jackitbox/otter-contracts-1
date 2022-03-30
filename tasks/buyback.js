@@ -2,7 +2,7 @@ const { BigNumber } = require('ethers')
 const { task, types } = require('hardhat/config')
 
 const QUICK_ROUTER = '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff'
-const BUY_BACKER = '0x155D21B6D7EB5DD1035A9Ae57201C20ff1ea90D2'
+const BUY_BACKER = '0x017aDb26B2Ea4dbd9f1372710748e1388fa3082a'
 const CLAM = '0xc250e9987a032acac293d838726c511e6e1c029d'
 const DAI_PATH = [
   '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063',
