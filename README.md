@@ -15,10 +15,6 @@ Local Setup Steps:
 1. Compile Solidity: `yarn compile`
 1. **_TODO_**: How to do local deployments of the contracts.
 
-## 🤨 How it all works
-
-![High Level Contract Interactions](./docs/box-diagram.png)
-
 ## Mainnet Contracts & Addresses
 
 |    Contract     |                                                         Addresss                                                          | Notes                                                                     |
