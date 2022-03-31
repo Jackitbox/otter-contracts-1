@@ -27,7 +27,10 @@ abstract contract LockerOwned is OwnableUpgradeable {
 }
 
 interface EQi {
-    function maxLock() external view returns (uint256);
+    function userInfo(address user)
+        external
+        view
+        returns (uint256 amount, uint256 endBlock);
 
     function enter(uint256 _amount, uint256 _blockNumber) external;
 
