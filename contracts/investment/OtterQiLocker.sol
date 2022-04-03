@@ -74,7 +74,7 @@ contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
     /// @param relock_ the boolean showing to lock or not
     function harvest(bool relock_) external onlyLocker {
         uint256 rewards = ocQi.collectReward(address(treasury));
-        if (relock_ > 0) {
+        if (relock_) {
             lock(rewards);
         }
         emit Harvest(rewards);
