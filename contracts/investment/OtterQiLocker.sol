@@ -8,6 +8,7 @@ import '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol';
 import '../interfaces/IOtterTreasury.sol';
 import '../interfaces/IERC20.sol';
 import '../interfaces/IOtterClamQi.sol';
+import '../interfaces/IEQi.sol';
 
 import '../types/LockerOwnedUpgradeable.sol';
 
@@ -40,14 +41,23 @@ contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
         dao = dao_;
     }
 
+    IEQi public constant eQi = IEQi(0x880DeCADe22aD9c58A8A4202EF143c4F305100B3);
+
     /// @notice Lock Qi to QiDAO and mint ocQi to treasury
     /// @param amount_ the amount of qi
-    /// @param blockNumber_ the block number going to locked
-    function lock(uint256 amount_, uint256 blockNumber_) public onlyLocker {
+    function lock(uint256 amount_) public onlyLocker {
         treasury.manage(address(qi), amount_);
         qi.approve(address(ocQi), amount_);
-        ocQi.lock(address(treasury), amount_, blockNumber_);
-        emit Lock(amount_, blockNumber_);
+        uint256 endBlock = eQi.userInfo(address(ocQi)).endBlock;
+        uint256 maxLock = ocQi.maxLock();  // 4 years
+        uint256 diffBlock = 0;
+        if (endBlock == 0) {
+            diffBlock = maxLock;
+        } else if (endBlock < (block.number + maxLock)) {
+            diffBlock = (block.number + maxLock) - endBlock;
+        }
+        ocQi.lock(address(treasury), amount_, diffBlock);
+        emit Lock(amount_, diffBlock);
     }
 
     /// @notice Unlock Qi from QiDAO and burn ocQi
@@ -61,11 +71,11 @@ contract OtterQiLocker is LockerOwnedUpgradeable, UUPSUpgradeable {
     }
 
     /// @notice Harvest reward from QiDAO
-    /// @param blockNumber_ the block number going to locked, if = 0, no lock
-    function harvest(uint256 blockNumber_) external onlyLocker {
+    /// @param relock_ the boolean showing to lock or not
+    function harvest(bool relock_) external onlyLocker {
         uint256 rewards = ocQi.collectReward(address(treasury));
-        if (blockNumber_ > 0) {
-            lock(rewards, blockNumber_);
+        if (relock_ > 0) {
+            lock(rewards);
         }
         emit Harvest(rewards);
     }
